@@ -1,4 +1,4 @@
-function samples = nuts(epsilon, f, M, theta0)
+function samples = nuts(epsilon, f, M, theta0, verbose, k_label)
 % function samples = nuts(epsilon, f, M, theta0)
 % 
 % Implements the No-U-Turn Sampler (NUTS), specifically, algorithm 3
@@ -34,9 +34,15 @@ samples = zeros(M, D);
 [logp,grad] = f(theta0);
 samples(1, :) = theta0;
 
-for m = 2:M,
+if verbose 
+     display(sprintf('NUTS on GP: %d Iter: %d LL: %f', k_label, 1, logp));
+end
+
+for m = 2:M
 	
-	display(sprintf('sample %4.d  logp %.3f', m, logp));
+    if verbose 
+         display(sprintf('NUTS on GP: %d Iter: %d LL: %f', k_label, m, logp));
+    end
 
     % Resample momenta.
     r0 = randn(1, D);

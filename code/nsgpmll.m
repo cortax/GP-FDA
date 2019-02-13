@@ -1,44 +1,31 @@
-function [val,valy,vall,vals,vale] = nsgpmll(pars)
-	
-	n = length(pars.xtr);
-	if sum(ismember('ab', pars.nsfuncs))
-		pars.Kl = gausskernel(pars.xtr, pars.xtr, pars.betaell,   pars.alphaell,   pars.tol);
-		pars.Ks = gausskernel(pars.xtr, pars.xtr, pars.betasigma, pars.alphasigma, pars.tol);
-		pars.Ko = gausskernel(pars.xtr, pars.xtr, pars.betaomega, pars.alphaomega, pars.tol);
-	end
-	Ky = nsgausskernel(pars.xtr, pars.xtr, pars.l_ell, pars.l_ell, pars.l_sigma, pars.l_sigma, pars.l_omega);
-	zs = zeros(pars.n,pars.p);
-	
+function [val,valy,valm,valgamma,vallambda, valeta] = nsgpmll(gp)
+    if isempty(gp.Ky)
+        gp.Ky = nsgausskernel(gp.xtr, gp.xtr, gp.loglambda, gp.loglambda, gp.loggamma, gp.loggamma, gp.logeta);
+    end
+    
 	% check if non-sdp or low condition number
-	[~,p] = chol(Ky);
-	rc = rcond(Ky);
-	if p > 0 || rc < 1e-15
-		val = -inf;
-		return;
-	end
-	
+	[~,p] = chol(gp.Ky);
+	rc = rcond(gp.Ky);
+    if p > 0 || rc < 1e-15
+        val = -inf;
+        gp.Ky = [];
+        gp.invKy = [];
+        return;
+    end
+    
+	if isempty(gp.invKy)
+        gp.invKy = pdinv(gp.Ky);
+    end
+    
 	% assuming exp-transformation here
-	valy = diag(logmvnpdf(pars.ytr, zs, Ky));
+	valy = sum(logmvnpdf(gp.ytr', gp.m', gp.Ky, gp.invKy));
+
+    valm = logmvnpdf(gp.m', zeros(1,length(gp.m)), gp.hyper.Km, gp.hyper.invKm);
+	valgamma = logmvnpdf(gp.loggamma', gp.hyper.mu_loggamma*ones(1,length(gp.loggamma)), gp.hyper.Kloggamma, gp.hyper.invKloggamma);
+    vallambda = logmvnpdf(gp.loglambda', gp.hyper.mu_loglambda*ones(1,length(gp.loglambda)), gp.hyper.Kloglambda, gp.hyper.invKloglambda);
+    valeta = logmvnpdf(gp.logeta', gp.hyper.mu_logeta*ones(1,length(gp.logeta)), gp.hyper.Klogeta, gp.hyper.invKlogeta);
 	
-	if length(pars.ell) == 1
-		vall = logmvnpdf(pars.ell*ones(n,1), muell, pars.Kl);
-	else
-		vall = logmvnpdf(pars.l_ell, pars.l_muell, pars.Kl);
-	end
-	
-	if length(pars.sigma) == 1
-		vals = logmvnpdf(pars.sigma*ones(n,1), musigma, pars.Ks);
-	else
-		vals = logmvnpdf(pars.l_sigma, pars.l_musigma, pars.Ks);
-	end
-	
-	if length(pars.omega) == 1
-		vale = logmvnpdf(pars.omega*ones(n,1), muomega, pars.Ko);
-	else
-		vale = logmvnpdf(pars.l_omega, pars.l_muomega, pars.Ko);
-	end
-	
-	val = valy + vall + vals + vale;
+	val = valy + valm + valgamma + vallambda + valeta;
 end
 
 

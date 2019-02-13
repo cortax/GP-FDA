@@ -1,46 +1,25 @@
-function pars = parsesample(theta, pars)
-
-	% retrieve results from 'theta' into 'pars'
-	
-	n = length(pars.ell);
-	j = 0;
-	if ismember('l', pars.nsfuncs)
-		pars.wl_ell   = theta(j+1:j+n)'; 
-		j=j+n;
-	else
-		pars.wl_ell   = theta(j+1) * ones(n,1); 
-		j=j+1;
-	end
-	if ismember('s', pars.nsfuncs)
-		pars.wl_sigma = theta(j+1:j+n)';
-		j=j+n;
-	else
-		pars.wl_sigma = theta(j+1) * ones(n,1); 
-		j=j+1;
-	end
-	if ismember('o', pars.nsfuncs)
-		pars.wl_omega = theta(j+1:j+n)';
-		j=j+n;
-	else
-		pars.wl_omega = theta(j+1) * ones(n,1); 
-		j=j+1;
-	end
-	if ismember('m', pars.nsfuncs)
-		pars.muell   = theta(j+1);
-		pars.musigma = theta(j+2);
-		pars.muomega = theta(j+3);
-		j = j + 3;
-	end
-	if ismember('a', pars.nsfuncs)
-		pars.alphaell   = theta(j+1);
-		pars.alphasigma = theta(j+2);
-		pars.alphaomega = theta(j+3);
-		j = j + 3;
-	end
-	if ismember('b', pars.nsfuncs) 
-		pars.betaell   = theta(j+1);
-		pars.betasigma = theta(j+2);
-		pars.betaomega = theta(j+3);
-	end
+function pars = parsesample(w_theta, pars)
+    b = 0;
+    
+    a = b+1;
+    b = b + length(pars.w_m);
+    pars.w_m = w_theta(a:b)';
+    
+    a = b+1;
+    b = b + length(pars.w_loggamma);
+    pars.w_loggamma = w_theta(a:b)';
+    
+    a = b+1;
+    b = b + length(pars.w_loglambda);
+    pars.w_loglambda = w_theta(a:b)';
+    
+    a = b+1;
+    b = b + length(pars.w_logeta);
+    pars.w_logeta = w_theta(a:b)';
+    
+    pars.Ky = [];
+    pars.invKy = [];
+    pars.Kf = [];
+    pars.invKy = [];
 end
 
