@@ -19,7 +19,7 @@ gp.loglambda = log(ones(T,1)*0.01); % log Lengthscale
 gp = gradient(gp, 1000, 1, 'm');
 gp = gradient(gp, 1000, 1, 'mg');
 gp = gradient(gp, 1000, 1, 'mgl');
-gp = gradient(gp, 1000, 1, 'mgle');
+gp = gradient(gp, 5000, 1, 'mgle');
 
 gp.show();
 hold on; 
