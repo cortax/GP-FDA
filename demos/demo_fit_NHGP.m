@@ -1,5 +1,5 @@
-addpath('../data/')
 
+addpath(genpath('../'))
 load('npfda_spec_norm.mat');
 
 X = specX(1:end-1,1);
