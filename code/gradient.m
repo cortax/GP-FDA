@@ -1,5 +1,8 @@
 function gp = gradient(gp, graditers, verbose, optimoptions)
 
+    if nargin < 3
+        verbose = 0;
+    end
     if nargin < 4
         optimoptions = 'mgle';
     end
@@ -10,6 +13,10 @@ function gp = gradient(gp, graditers, verbose, optimoptions)
 	% MLL of the initial values
 	mlls = zeros(graditers,1);
 	mlls(1,:) = nsgpmll(gp);
+    
+    if isnan(mlls(1,:))
+        display(sprintf('GP initialization warning - marginal loglikelihood undefined'));
+    end
 
 	if verbose
 		display(sprintf('GP: %d Iter: %d Stepsize: %f LL: %f', gp.label, 1, log10(step), mean(mlls(1,:))));
