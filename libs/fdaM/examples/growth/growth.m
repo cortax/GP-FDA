@@ -212,7 +212,7 @@ ylabel('\fontsize{12} Acceleration (cm/yr^2)')
 axis([1,18,-12,2])
 axis('square')
 
-print -dps2 'c:/MyFiles/fdabook1/figs.dir/twoaccelplots.ps'
+print -dps2 'data/twoaccelplots.ps'
 
 subplot(1,1,1)
 phdl = plot(agefine, D2hgtfmat35, 'k-', [1,18], [0,0], 'k:');
@@ -301,7 +301,7 @@ plot(age, hgtfresmnsqr, 'ko', age, hgtfvar, 'k-')
 xlabel('\fontsize{16} Age')
 ylabel('\fontsize{16} Variance of Measurement')
 
-print -dps2 'c:/MyFiles/fdabook1/figs.dir/growthvariance.ps'
+print -dps2 'data/growthvariance.ps'
 
 %  update weight vector for smoothing data
 
@@ -1040,7 +1040,7 @@ plot(fit(:),accdist(:), 'o')
 [bdryind,Area] = convhull(y);
 
 figure(4)
-plot(y(bdryind,1),ybdryindK,2),'o-')
+plot(y(bdryind,1),y(bdryindK,2),'o-')
 
 %  compute delaunay triangulation
 
