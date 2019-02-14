@@ -1,9 +1,10 @@
-
 addpath(genpath('../'))
 load('npfda_spec_norm.mat');
 
 X = specX(1:end-1,1);
 y = diff(specY);
+
+y = y(:,1:30);
 
 hyper = make_hyper(X);
 
@@ -19,7 +20,7 @@ gp.loglambda = log(ones(T,1)*0.01); % log Lengthscale
 gp = gradient(gp, 1000, 1, 'm');
 gp = gradient(gp, 1000, 1, 'mg');
 gp = gradient(gp, 1000, 1, 'mgl');
-gp = gradient(gp, 5000, 1, 'mgle');
+gp = gradient(gp, 1000, 1, 'mgle');
 
 gp.show();
 hold on; 
