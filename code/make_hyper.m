@@ -15,11 +15,11 @@ function hyper = make_hyper(timestamp, scaled)
     hyper.tol = 1e-3;
 
     hyper.mu_m = 0;
-    hyper.G_m = 0.5;
-    hyper.L_m = 0.02;
+    hyper.G_m = 1.0;
+    hyper.L_m = 0.05;
 
     % most probable signal-variance: 0.0001, expected signal-variance: 0.01
-    [mu, sigma] = logn_from_mode_and_mean(0.01, 0.1);
+    [mu, sigma] = logn_from_mode_and_mean(0.1, 0.5);
     hyper.mu_loggamma = mu;
     hyper.G_loggamma  = sigma;
     hyper.L_loggamma  = 0.1;
@@ -29,7 +29,7 @@ function hyper = make_hyper(timestamp, scaled)
 
     % should be most probable lengthscale: 1, expected lengthscale: 2, 
     % to encourage larger lengthscale
-    [mu, sigma] = logn_from_mode_and_mean(0.1, 0.2);
+    [mu, sigma] = logn_from_mode_and_mean(0.02, 0.05);
     hyper.mu_loglambda = mu;
     hyper.G_loglambda  = sigma;
     hyper.L_loglambda  = 0.1;
@@ -39,7 +39,7 @@ function hyper = make_hyper(timestamp, scaled)
 
     % should be most probable lengthscale: 0.00001, expected lengthscale: 0.1, 
     % to encourage smaller noise
-    [mu, sigma] = logn_from_mode_and_mean(0.00000001, 0.0000001);
+    [mu, sigma] = logn_from_mode_and_mean(0.00000001, 0.01);
     hyper.mu_logeta = mu;
     hyper.G_logeta  = sigma;
     hyper.L_logeta  = 0.1;
