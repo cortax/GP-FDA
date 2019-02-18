@@ -30,14 +30,14 @@ classdef nhgpmodel < matlab.mixin.Copyable
 
 	methods
 		% constructor
-		function gp = nhgpmodel(x_timegrid, m, gamma, lambda, eta)
+		function gp = nhgpmodel(x_timegrid, m, loggamma, loglambda, logeta)
      		gp.x_timegrid = tocolumn(x_timegrid);
             gp.T = size(gp.x_timegrid,1);
 			gp.D = pdist2(gp.x_timegrid,gp.x_timegrid).^2;
 			gp.m_ = tocolumn(m);
-            gp.loggamma_ = tocolumn(log(gamma));
-            gp.loglambda_ = tocolumn(log(lambda));
-            gp.logeta_ = tocolumn(log(eta));
+            gp.loggamma_ = tocolumn(loggamma);
+            gp.loglambda_ = tocolumn(loglambda);
+            gp.logeta_ = tocolumn(logeta);
             gp.cov_updates = 1;
             gp.update_covariance();
         end
@@ -111,11 +111,11 @@ classdef nhgpmodel < matlab.mixin.Copyable
         end
         
         function gradient = gradient_theta(gp, F)
-            gradient = [gp.gradient_dm(F); gp.gradient_dgamma(F); gp.gradient_dlambda(F); gp.gradient_deta(F)];
+            gradient = [gp.gradient_dm(F); gp.gradient_dloggamma(F); gp.gradient_dloglambda(F); gp.gradient_dlogeta(F)];
         end
         
         function cov_dynamic_updates(gp, val)
-            if val ~= 0 || val ~= 1
+            if ~isa(val,'logical')
                 error('cov_dynamic_updates takes binary values only');
             end
             gp.cov_updates = val;
@@ -147,12 +147,12 @@ classdef nhgpmodel < matlab.mixin.Copyable
             if length(theta) ~= gp.T*4
                 error('invalid theta length');
             end
-            gp.cov_dynamic_updates(0);
+            gp.cov_dynamic_updates(false);
             gp.m = theta(1:gp.T);
             gp.loggamma = theta((1:gp.T) + gp.T);
             gp.loglambda = theta((1:gp.T) + gp.T*2);
             gp.logeta = theta((1:gp.T) + gp.T*3);
-            gp.cov_dynamic_updates(1);
+            gp.cov_dynamic_updates(true);
             gp.update_covariance();
         end
         

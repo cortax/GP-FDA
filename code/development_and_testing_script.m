@@ -9,26 +9,32 @@ prior = nhgpprior(x_timegrid, ...
                   hyper.mu_logeta, hyper.G_logeta, hyper.L_logeta, ...
                   hyper.tol);
 
-figure;
-prior.show_m_prior();
-hold on;
-plot(x_timegrid, prior.m_random(5));
-title('m');
+groundtruth_model = prior.random_nhgp();
+Y = groundtruth_model.random(5);
 
 figure;
-prior.show_gamma_prior();
+groundtruth_model.show();
 hold on;
-plot(x_timegrid, exp(prior.loggamma_random(5)));
-title('gamma');
+plot(x_timegrid, Y);
+
+
+
+estimate_model = prior.random_nhgp();
+figure;
+estimate_model.show();
+
+theta0 = estimate_model.theta;
+ 
+for j = 1:10000
+    history(j) = -sum(estimate_model.logpdf(Y, x));
+end
+
+
+
+options = optimoptions('fminunc','Display','iter');
+theta0 = fminunc(f,theta0, options);
 
 figure;
-prior.show_lambda_prior();
+estimate_model.show();
 hold on;
-plot(x_timegrid, exp(prior.loglambda_random(5)));
-title('lambda');
-
-figure;
-prior.show_eta_prior();
-hold on;
-plot(x_timegrid, exp(prior.logeta_random(5)));
-title('eta');
+plot(x_timegrid, Y);

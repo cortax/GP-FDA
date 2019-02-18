@@ -8,10 +8,26 @@ classdef nhgpprior < matlab.mixin.Copyable
 
 	methods
 		function prior = nhgpprior(x_timegrid, mu_m, G_m, L_m, mu_loggamma, G_loggamma, L_loggamma, mu_loglambda, G_loglambda, L_loglambda, mu_logeta, G_logeta, L_logeta, tolerence)
-            prior.m_gpprior = nhgpmodel(x_timegrid, mu_m.*ones(size(x_timegrid)), G_m.*ones(size(x_timegrid)), L_m.*ones(size(x_timegrid)), tolerence.*ones(size(x_timegrid)));
-            prior.loggamma_gpprior = nhgpmodel(x_timegrid, mu_loggamma.*ones(size(x_timegrid)), G_loggamma.*ones(size(x_timegrid)), L_loggamma.*ones(size(x_timegrid)), tolerence.*ones(size(x_timegrid)));
-            prior.loglambda_gpprior = nhgpmodel(x_timegrid, mu_loglambda.*ones(size(x_timegrid)), G_loglambda.*ones(size(x_timegrid)), L_loglambda.*ones(size(x_timegrid)), tolerence.*ones(size(x_timegrid)));
-            prior.logeta_gpprior = nhgpmodel(x_timegrid, mu_logeta.*ones(size(x_timegrid)), G_logeta.*ones(size(x_timegrid)), L_logeta.*ones(size(x_timegrid)), tolerence.*ones(size(x_timegrid)));
+            prior.m_gpprior = nhgpmodel(x_timegrid, ...
+                                        mu_m.*ones(size(x_timegrid)), ...
+                                        log(G_m.*ones(size(x_timegrid))), ...
+                                        log(L_m.*ones(size(x_timegrid))), ...
+                                        log(tolerence.*ones(size(x_timegrid))));
+            prior.loggamma_gpprior = nhgpmodel(x_timegrid, ...
+                                               mu_loggamma.*ones(size(x_timegrid)), ...
+                                               log(G_loggamma.*ones(size(x_timegrid))), ...
+                                               log(L_loggamma.*ones(size(x_timegrid))), ...
+                                               log(tolerence.*ones(size(x_timegrid))));
+            prior.loglambda_gpprior = nhgpmodel(x_timegrid, ...
+                                                mu_loglambda.*ones(size(x_timegrid)), ...
+                                                log(G_loglambda.*ones(size(x_timegrid))), ...
+                                                log(L_loglambda.*ones(size(x_timegrid))), ...
+                                                log(tolerence.*ones(size(x_timegrid))));
+            prior.logeta_gpprior = nhgpmodel(x_timegrid, ...
+                                             mu_logeta.*ones(size(x_timegrid)), ...
+                                             log(G_logeta.*ones(size(x_timegrid))), ...
+                                             log(L_logeta.*ones(size(x_timegrid))), ...
+                                             log(tolerence.*ones(size(x_timegrid))));
         end
         
         function show_loggpprior(prior, gpprior)
@@ -52,39 +68,44 @@ classdef nhgpprior < matlab.mixin.Copyable
             prior.show_loggpprior(prior.logeta_gpprior);
         end
         
-        function Y = m_random(prior, N)
+        function Y = random_m(prior, N)
             if nargin < 2
                 N = 1;
             end
             Y = prior.m_gpprior.random(N);
         end
         
-        function Y = loggamma_random(prior, N)
+        function Y = random_loggamma(prior, N)
             if nargin < 2
                 N = 1;
             end
             Y = prior.loggamma_gpprior.random(N);
         end
         
-        function Y = loglambda_random(prior, N)
+        function Y = random_loglambda(prior, N)
             if nargin < 2
                 N = 1;
             end
             Y = prior.loglambda_gpprior.random(N);
         end
         
-        function Y = logeta_random(prior, N)
+        function Y = random_logeta(prior, N)
             if nargin < 2
                 N = 1;
             end
             Y = prior.logeta_gpprior.random(N);
         end
         
-        function Y = theta_random(prior, N)
+        function Y = random_theta(prior, N)
             if nargin < 2
                 N = 1;
             end
-            Y = [prior.m_random(N); prior.loggamma_random(N); prior.loglambda_random(N); prior.logeta_random(N)];
+            Y = [prior.random_m(N); prior.random_loggamma(N); prior.random_loglambda(N); prior.random_logeta(N)];
+        end
+        
+        function model = random_nhgp(prior)
+            x_timegrid = prior.m_gpprior.x_timegrid;
+            model = nhgpmodel(x_timegrid, prior.random_m(), prior.random_loggamma(), prior.random_loglambda(), prior.random_logeta());
         end
     end
 end

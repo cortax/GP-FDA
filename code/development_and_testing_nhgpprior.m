@@ -10,24 +10,25 @@ prior = nhgpprior(x_timegrid, ...
                   hyper.tol);
 
 figure;
-plot(prior.m_gpprior.gradient_dlambda(F));
+prior.show_m_prior();
 hold on;
-plot(dlog_pF_dlambda);
+plot(x_timegrid, prior.random_m(5));
+title('m');
 
 figure;
 prior.show_gamma_prior();
 hold on;
-plot(x_timegrid, exp(prior.loggamma_random(5)));
+plot(x_timegrid, exp(prior.random_loggamma(5)));
 title('gamma');
 
 figure;
 prior.show_lambda_prior();
 hold on;
-plot(x_timegrid, exp(prior.loglambda_random(5)));
+plot(x_timegrid, exp(prior.random_loglambda(5)));
 title('lambda');
 
 figure;
 prior.show_eta_prior();
 hold on;
-plot(x_timegrid, exp(prior.logeta_random(5)));
+plot(x_timegrid, exp(prior.random_logeta(5)));
 title('eta');
