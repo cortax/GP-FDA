@@ -19,10 +19,10 @@ elseif(nargin==4)
     logp = k - 0.5*sum((x_minus_mu * invSIGMA).*x_minus_mu , 2);
 end
 
-[warnMsg, warnId] = lastwarn;
-if ~isempty(warnMsg)
-    1==1;
-end
+% [warnMsg, warnId] = lastwarn;
+% if ~isempty(warnMsg)
+%     1==1;
+% end
 
 end
 
