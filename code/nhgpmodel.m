@@ -110,8 +110,45 @@ classdef nhgpmodel < matlab.mixin.Copyable
             gradient = sum(dl_data,2);
         end
         
-        function gradient = gradient_theta(gp, F)
-            gradient = [gp.gradient_dm(F); gp.gradient_dloggamma(F); gp.gradient_dloglambda(F); gp.gradient_dlogeta(F)];
+        function [gradient, gradient_dm, gradient_dloggamma, gradient_dloglambda, gradient_dlogeta] = gradient_dtheta(gp, F)
+            gradient_dm = gp.gradient_dm(F); 
+            gradient_dloggamma = gp.gradient_dloggamma(F);
+            gradient_dloglambda = gp.gradient_dloglambda(F); 
+            gradient_dlogeta = gp.gradient_dlogeta(F);
+            gradient = [gradient_dm; gradient_dloggamma; gradient_dloglambda; gradient_dlogeta];
+        end
+        
+        function gradient = gradient_dF_numeric(gp, F)
+            gradient = zeros(size(gp.m));
+            dp = 0.00000001;
+            for i = 1:length(gradient)
+                delta = zeros(size(gradient));
+                delta(i) = dp;
+
+                a = gp.logpdf(F + delta);
+                b = gp.logpdf(F - delta);
+
+                gradient(i) = sum(a-b)/dp/2;
+            end
+        end
+        
+        function gradient = gradient_dtheta_numeric(gp, F)
+            gradient = zeros(size(gp.theta));
+            dp = 0.00000001;
+            theta_backup = gp.theta;
+            for i = 1:length(theta_backup)
+                delta = zeros(size(theta_backup));
+                delta(i) = dp;
+
+                gp.theta = theta_backup + delta;
+                a = gp.logpdf(F);
+
+                gp.theta = theta_backup - delta;
+                b = gp.logpdf(F);
+
+                gradient(i) = sum(a-b)/dp/2;
+            end
+            gp.theta = theta_backup;
         end
         
         function cov_dynamic_updates(gp, val)

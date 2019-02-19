@@ -17,18 +17,15 @@ groundtruth_model.show();
 hold on;
 plot(x_timegrid, Y);
 
-
-
 estimate_model = prior.random_nhgp();
+estimate_model.logeta = ones(size(x_timegrid));
+
 figure;
 estimate_model.show();
 
 theta0 = estimate_model.theta;
  
-for j = 1:10000
-    history(j) = -sum(estimate_model.logpdf(Y, x));
-end
-
+f = @(x) -sum(estimate_model.logpdf(Y, x));
 
 
 options = optimoptions('fminunc','Display','iter');

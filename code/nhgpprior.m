@@ -30,7 +30,45 @@ classdef nhgpprior < matlab.mixin.Copyable
                                              log(tolerence.*ones(size(x_timegrid))));
         end
         
+        function [logP, logP_m, logP_loggamma, logP_loglambda, logP_logeta] = logpdf(prior, theta)
+            T = prior.m_gpprior.T;
+            if length(theta) ~= T*4
+                error('invalid theta length');
+            end
+            logP_m = prior.m_gpprior.logpdf(theta(1:T));
+            logP_loggamma = prior.loggamma_gpprior.logpdf(theta((1:T) + T));
+            logP_loglambda = prior.loglambda_gpprior.logpdf(theta((1:T) + T*2));
+            logP_logeta = prior.logeta_gpprior.logpdf(theta((1:T) + T*3));
+            logP = logP_m + logP_loggamma + logP_loglambda + logP_logeta;
+        end
+        
+        function [gradient, gradient_dm, gradient_dloggamma, gradient_dloglambda, gradient_dlogeta] = gradient(prior, theta)
+            T = prior.m_gpprior.T;
+            if length(theta) ~= T*4
+                error('invalid theta length');
+            end
+            gradient_dm = prior.m_gpprior.gradient_dF(theta(1:T));
+            gradient_dloggamma = prior.loggamma_gpprior.gradient_dF(theta((1:T) + T));
+            gradient_dloglambda = prior.loglambda_gpprior.gradient_dF(theta((1:T) + T*2));
+            gradient_dlogeta = prior.logeta_gpprior.gradient_dF(theta((1:T) + T*3));
+            gradient = [gradient_dm; gradient_dloggamma; gradient_dloglambda; gradient_dlogeta]; 
+        end
+        
+        function [gradient, gradient_dm, gradient_dloggamma, gradient_dloglambda, gradient_dlogeta] = gradient_whitened(prior, theta)
+            T = prior.m_gpprior.T;
+            if length(theta) ~= T*4
+                error('invalid theta length');
+            end
+            gradient_dm = prior.m_gpprior.gradient_dF(theta(1:T));
+            gradient_dloggamma = prior.loggamma_gpprior.gradient_dF(theta((1:T) + T));
+            gradient_dloglambda = prior.loglambda_gpprior.gradient_dF(theta((1:T) + T*2));
+            gradient_dlogeta = prior.logeta_gpprior.gradient_dF(theta((1:T) + T*3));
+            gradient = [gradient_dm; gradient_dloggamma; gradient_dloglambda; gradient_dlogeta]; 
+        end
+        
         function show_loggpprior(prior, gpprior)
+            % Takes into argument loggamma_gpprior, loglambda_gpprior or
+            % logeta_gpprior, and shows the log Gaussian process prior
             gpprior.update_covariance();
             E1 = exp(gpprior.m' + 0.5.*diag(gpprior.Ky)') - logninv(0.025, gpprior.m',  sqrt(diag(gpprior.Ky))') ;
             E2 = logninv(0.975, gpprior.m',  sqrt(diag(gpprior.Ky))') - exp(gpprior.m' + 0.5.*diag(gpprior.Ky)');
@@ -96,7 +134,7 @@ classdef nhgpprior < matlab.mixin.Copyable
             Y = prior.logeta_gpprior.random(N);
         end
         
-        function Y = random_theta(prior, N)
+        function Y = random(prior, N)
             if nargin < 2
                 N = 1;
             end
