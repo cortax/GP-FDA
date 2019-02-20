@@ -40,38 +40,36 @@ estimate_model = nhgpmodel(x_timegrid, mean(Y,2), log(0.5)*ones(size(x_timegrid)
 J = 1000;
 history = NaN(1,J);
 history(1) = sum(estimate_model.logpdf(Y));
+hist_tau = NaN(1,J);
+hist_theta = NaN(length(estimate_model.theta), J);
+hist_theta(:,1) = estimate_model.theta;
 
 tau = 0.0001;
-hist_tau = NaN(1,J);
-
-v = theta*0;
-b1 = 0.9;
-b2 = 0.99;
+b1 = 0.5;
+v = zeros(size(estimate_model.theta));
 
 for j = 2:J
     theta = estimate_model.theta;
-    [dtheta_, gradient_dm, gradient_dloggamma, gradient_dloglambda, gradient_dlogeta] = estimate_model.gradient_dtheta(Y);
-    
-    dtheta = [gradient_dm;
-              gradient_dloggamma*(1-b2^j) + mean(gradient_dloggamma)*ones(size(gradient_dloggamma))*(b2^j);
-              gradient_dloglambda*(1-b2^j) + mean(gradient_dloglambda)*ones(size(gradient_dloglambda))*(b2^j);
-              gradient_dlogeta*(1-b2^j) + mean(gradient_dlogeta)*ones(size(gradient_dlogeta))*(b2^j)];
-    
-    v = b1.*v + (1-b1).*dtheta;
-   
-    estimate_model.theta = estimate_model.theta + tau * v;  
+    theta_interim = theta + b1*v;
+    estimate_model.theta = theta_interim;
+    dtheta = estimate_model.gradient_dtheta(Y);
+    v = b1*v + tau*dtheta;
+          
+    estimate_model.theta = theta + v;
     
     history(j) = sum(estimate_model.logpdf(Y)); % sum(groundtruth_model.logpdf(Y))
     hist_tau(j) = tau;
     
-    if history(j) > history(j-1) 
-        tau = tau * 1.05;
+    if history(j) >= history(j-1) 
+        tau = tau * 1.01;
     else
         estimate_model.theta = theta;
-        tau = tau * 0.1;
+        tau = tau * 0.8;
         v = v.*0;
         history(j) = history(j-1);
     end
+    
+    hist_theta(:,j) = estimate_model.theta;
 
     fprintf('Iter: %i : %i\n',j, history(j));
     
@@ -95,19 +93,19 @@ for j = 2:J
     plot(x_timegrid, exp(estimate_model.logeta));
     title('eta');
     
-    figure(2);
-    subplot(2,2,1);
-    plot(gradient_dm);
-    title('gradient m');
-    subplot(2,2,2);
-    plot(gradient_dloggamma*(1-b2^j) + mean(gradient_dloggamma)*ones(size(gradient_dloggamma))*(b2^j));
-    title('gradient loggamma');
-    subplot(2,2,3);
-    plot(gradient_dloglambda*(1-b2^j) + mean(gradient_dloglambda)*ones(size(gradient_dloglambda))*(b2^j));
-    title('gradient loglambda');
-    subplot(2,2,4);
-    plot(gradient_dlogeta*(1-b2^j) + mean(gradient_dlogeta)*ones(size(gradient_dlogeta))*(b2^j));
-    title('gradient logeta');
+%     figure(2);
+%     subplot(2,2,1);
+%     plot(gradient_dm);
+%     title('gradient m');
+%     subplot(2,2,2);
+%     plot(gradient_dloggamma*(1-b2^j) + mean(gradient_dloggamma)*ones(size(gradient_dloggamma))*(b2^j));
+%     title('gradient loggamma');
+%     subplot(2,2,3);
+%     plot(gradient_dloglambda*(1-b2^j) + mean(gradient_dloglambda)*ones(size(gradient_dloglambda))*(b2^j));
+%     title('gradient loglambda');
+%     subplot(2,2,4);
+%     plot(gradient_dlogeta*(1-b2^j) + mean(gradient_dlogeta)*ones(size(gradient_dlogeta))*(b2^j));
+%     title('gradient logeta');
     
     figure(9);
     subplot(2,2,1);
