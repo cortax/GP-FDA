@@ -10,7 +10,7 @@ prior = nhgpprior(x_timegrid, ...
                   hyper.tol);
 
 groundtruth_model = prior.random_nhgp();
-Y = groundtruth_model.random(100);
+Y = groundtruth_model.random(10);
 
 figure(10);
 subplot(2,2,1);
