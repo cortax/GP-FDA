@@ -44,7 +44,6 @@ hist_tau = NaN(1,J);
 hist_theta = NaN(length(estimate_model.theta), J);
 hist_theta(:,1) = estimate_model.theta;
 
-
 tau = 0.000001;
 b1 = 0.5;
 v = zeros(size(estimate_model.theta));
@@ -54,49 +53,30 @@ hist_v(:,1) = v;
 for j = 2:J
     theta = estimate_model.theta;
     
-    %val_theta = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
+    K = blkdiag(prior.m_gpprior.Ky, prior.loggamma_gpprior.Ky, prior.loglambda_gpprior.Ky, prior.logeta_gpprior.Ky);
     
-    theta_interim = theta + b1*v;
-    estimate_model.theta = theta_interim;
+    dtheta = K*estimate_model.gradient_dtheta(Y) + K*prior.gradient(estimate_model.theta);
     
-    %val_interim = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
+    figure(99);
+    hold off;
+    plot(prior.gradient(estimate_model.theta));
+    hold on;
+    plot(K*prior.gradient(estimate_model.theta));    
     
-    dtheta = estimate_model.gradient_dtheta(Y) + prior.gradient(estimate_model.theta);
-    
-%     dtheta_num =  dtheta*0;
-%     d = 0.000001;
-%     for i = 1:length(theta)
-%         delta = zeros(size(theta));
-%         delta(i) = d;
-%         
-%         estimate_model.theta = theta + delta;
-%         b = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
-%         
-%         estimate_model.theta = theta - delta;
-%         a = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
-%         
-%         dtheta_num(i) = (b-a)/d/2;
-%     end
-    
-    
-    v = b1*v + tau*dtheta;
-          
-    estimate_model.theta = theta + v;
+    v = b1.*v + (1-b1).*dtheta;
+    estimate_model.theta = estimate_model.theta + tau * v;
     
     history(j) = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
     hist_tau(j) = tau;
     
-%     if history(j) >= history(j-1) 
-%         tau = tau * 1.05;
-%     elseif history(j) >= history(j-1) - 500
-%         tau = tau * 0.9;
-%         v = v*0.9;
-%     else
-%         estimate_model.theta = theta;
-%         tau = tau * 0.8;
-%         v = v.*0;
-%         history(j) = history(j-1);
-%     end
+    if history(j) >= history(j-1) 
+        tau = tau * 1.05;
+    else
+        estimate_model.theta = theta;
+        tau = tau * 0.8;
+        v = v.*0.5;
+        history(j) = history(j-1);
+    end
     
     hist_theta(:,j) = estimate_model.theta;
     hist_v(:,j) = v;
@@ -163,6 +143,3 @@ for j = 2:J
     
     drawnow;
 end
-
-
-

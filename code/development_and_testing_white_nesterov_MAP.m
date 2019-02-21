@@ -10,7 +10,7 @@ prior = nhgpprior(x_timegrid, ...
                   hyper.tol);
 
 groundtruth_model = prior.random_nhgp();
-Y = groundtruth_model.random(30);
+Y = groundtruth_model.random(100);
 
 figure(10);
 subplot(2,2,1);
@@ -31,11 +31,11 @@ subplot(2,2,4);
 plot(x_timegrid, exp(groundtruth_model.logeta));
 title('eta');
 
-sum(groundtruth_model.logpdf(Y))
+optimal = sum(groundtruth_model.logpdf(Y)) + prior.logpdf(groundtruth_model.theta)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-estimate_model = nhgpmodel(x_timegrid, 0*mean(Y,2), log(1.0)*ones(size(x_timegrid)), log(0.01)*ones(size(x_timegrid)), log(1.0)*ones(size(x_timegrid)));
+estimate_model = nhgpmodel(x_timegrid, mean(Y,2), log(1.0)*ones(size(x_timegrid)), log(0.01)*ones(size(x_timegrid)), log(1.0)*ones(size(x_timegrid)));
 
 J = 1000;
 history = NaN(1,J);
@@ -44,8 +44,7 @@ hist_tau = NaN(1,J);
 hist_theta = NaN(length(estimate_model.theta), J);
 hist_theta(:,1) = estimate_model.theta;
 
-
-tau = 0.000001;
+tau = 0.001;
 b1 = 0.5;
 v = zeros(size(estimate_model.theta));
 
@@ -54,49 +53,26 @@ hist_v(:,1) = v;
 for j = 2:J
     theta = estimate_model.theta;
     
-    %val_theta = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
-    
     theta_interim = theta + b1*v;
     estimate_model.theta = theta_interim;
     
-    %val_interim = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
-    
-    dtheta = estimate_model.gradient_dtheta(Y) + prior.gradient(estimate_model.theta);
-    
-%     dtheta_num =  dtheta*0;
-%     d = 0.000001;
-%     for i = 1:length(theta)
-%         delta = zeros(size(theta));
-%         delta(i) = d;
-%         
-%         estimate_model.theta = theta + delta;
-%         b = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
-%         
-%         estimate_model.theta = theta - delta;
-%         a = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
-%         
-%         dtheta_num(i) = (b-a)/d/2;
-%     end
-    
+    K = blkdiag(prior.m_gpprior.Ky, prior.loggamma_gpprior.Ky, prior.loglambda_gpprior.Ky, prior.logeta_gpprior.Ky);
+    dtheta = K*estimate_model.gradient_dtheta(Y) + K*prior.gradient(estimate_model.theta);
     
     v = b1*v + tau*dtheta;
-          
     estimate_model.theta = theta + v;
     
     history(j) = sum(estimate_model.logpdf(Y)) + prior.logpdf(estimate_model.theta);
     hist_tau(j) = tau;
     
-%     if history(j) >= history(j-1) 
-%         tau = tau * 1.05;
-%     elseif history(j) >= history(j-1) - 500
-%         tau = tau * 0.9;
-%         v = v*0.9;
-%     else
-%         estimate_model.theta = theta;
-%         tau = tau * 0.8;
-%         v = v.*0;
-%         history(j) = history(j-1);
-%     end
+    if history(j) >= history(j-1) 
+        tau = tau * 1.05;
+    else
+        estimate_model.theta = theta;
+        tau = tau * 0.8;
+        v = v.*0.5;
+        history(j) = history(j-1);
+    end
     
     hist_theta(:,j) = estimate_model.theta;
     hist_v(:,j) = v;
