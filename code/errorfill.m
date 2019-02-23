@@ -1,4 +1,4 @@
-function figurehandle= errorfill(x, y, varargin)
+function figurehandle= errorfill(x, y,ax, varargin)
 
 % Usage: figurehandle= errorfill(x, y, E1, E2, ..., LineSpec)
 % 
@@ -94,7 +94,8 @@ function figurehandle= errorfill(x, y, varargin)
 	
 	
 	x=			transpose(repmat([x x(end:-1:1)], N, 1));			% x "there and back".
-	hold on;														% Start the patches.
+	cla(ax);
+    hold(ax,'on');														% Start the patches.
 	
 	% Get error values.
 	for n= 1:N														% Check E.
@@ -131,15 +132,15 @@ function figurehandle= errorfill(x, y, varargin)
 	% Draw.
 	% Tried, but created bad eps (loop instead): patch(x, E, colorshade, 'LineStyle', 'none');
 	for n= 1:N
-		patch(x(1:2*len), E(:,n), colorshade(1,n,:), 'LineStyle', 'none');	% Draw error fill.
+		patch(ax,x(1:2*len), E(:,n), colorshade(1,n,:), 'LineStyle', 'none');	% Draw error fill.
 	end
-	plot(x(1:len), y, lSpec, 'Color', color, 'linewidth', 2);		% Draw y(x).
-	if(~isempty(xInf)),  plot(xInf,  maxval, '^k'); end				% Draw Inf points.
-	if(~isempty(xnInf)), plot(xnInf, minval, 'vk'); end				% Draw -Inf points.
-	if(~isempty(xNaN)),  plot(xNaN,  maxval, '*k'); end				% Draw high NaN points.
-	if(~isempty(xnNaN)), plot(xnNaN, minval, '*k'); end				% Draw low NaN points.
+	plot(ax,x(1:len), y, lSpec, 'Color', color, 'linewidth', 2);		% Draw y(x).
+	if(~isempty(xInf)),  plot(ax,xInf,  maxval, '^k'); end				% Draw Inf points.
+	if(~isempty(xnInf)), plot(ax,xnInf, minval, 'vk'); end				% Draw -Inf points.
+	if(~isempty(xNaN)),  plot(ax,xNaN,  maxval, '*k'); end				% Draw high NaN points.
+	if(~isempty(xnNaN)), plot(ax,xnNaN, minval, '*k'); end				% Draw low NaN points.
 	figurehandle=	get(0, 'CurrentFigure');						% Return figure handle.
-	hold off;														% We are done.
+	hold(ax,'off');														% We are done.
 	
 	% Notify.
 	if(numel(xInf)+numel(xnInf)+numel(xNaN)+numel(xnNaN) > 0)		% Irregular values?

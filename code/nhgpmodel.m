@@ -48,11 +48,11 @@ classdef nhgpmodel < matlab.mixin.Copyable
             gp.invKf = pdinv(gp.Kf); 
         end
         
-        function show(gp, nbStd)
-            if nargin < 2
+        function show(gp, ax,nbStd)
+            if nargin < 3
                 nbStd = 1.96;
             end
-            errorfill(gp.x_timegrid', gp.m',  nbStd*sqrt(diag(gp.Ky))');
+            errorfill(gp.x_timegrid', gp.m',ax,  nbStd*sqrt(diag(gp.Ky))');
         end
         
         function Y = random(gp, N)

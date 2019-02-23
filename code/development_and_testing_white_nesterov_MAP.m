@@ -1,3 +1,6 @@
+close all;
+clearvars;
+
 x_timegrid = linspace(-1,1,200);
 
 hyper = make_hyper();
@@ -13,23 +16,21 @@ groundtruth_model = prior.random_nhgp();
 Y = groundtruth_model.random(10);
 
 figure(10);
-subplot(2,2,1);
-groundtruth_model.show();
-hold on;
-plot(x_timegrid, Y);
-title('Ground truth');
+[fig10_ax1,fig10_ax2,fig10_ax3,fig10_ax4] = deal(subplot(2,2,1),subplot(2,2,2),subplot(2,2,3),subplot(2,2,4));
 
-subplot(2,2,2);
-plot(x_timegrid, exp(groundtruth_model.loggamma));
-title('gamma');
+groundtruth_model.show(fig10_ax1);
+hold(fig10_ax1,'on');
+plot(fig10_ax1,x_timegrid, Y);
+hold(fig10_ax1,'off');
 
-subplot(2,2,3);
-plot(x_timegrid, exp(groundtruth_model.loglambda));
-title('lambda');
+plot(fig10_ax2,x_timegrid, exp(groundtruth_model.loggamma));
+plot(fig10_ax3,x_timegrid, exp(groundtruth_model.loglambda));
+plot(fig10_ax4,x_timegrid, exp(groundtruth_model.logeta));
 
-subplot(2,2,4);
-plot(x_timegrid, exp(groundtruth_model.logeta));
-title('eta');
+title(fig10_ax1,'Ground truth');
+title(fig10_ax2,'gamma');
+title(fig10_ax3,'lambda');
+title(fig10_ax4,'eta');
 
 optimal = sum(groundtruth_model.logpdf(Y)) + prior.logpdf(groundtruth_model.theta)
 
@@ -49,6 +50,22 @@ b1 = 0.5;
 v = zeros(size(estimate_model.theta));
 
 hist_v(:,1) = v;
+
+figure(1);
+[fig1_ax1,fig1_ax2,fig1_ax3,fig1_ax4] = deal(subplot(2,2,1),subplot(2,2,2),subplot(2,2,3),subplot(2,2,4));
+figure(9);
+[fig9_ax1,fig9_ax2,fig9_ax3,fig9_ax4] = deal(subplot(2,2,1),subplot(2,2,2),subplot(2,2,3),subplot(2,2,4));
+
+title(fig9_ax1','m update');
+title(fig9_ax2,'loggamma update');
+title(fig9_ax3,'loglambda update');
+title(fig9_ax4,'logeta update');
+
+figure(3)
+fig3_ax = gca;
+
+figure(4)
+fig4_ax = gca;
 
 for j = 2:J
     theta = estimate_model.theta;
@@ -77,29 +94,24 @@ for j = 2:J
     hist_theta(:,j) = estimate_model.theta;
     hist_v(:,j) = v;
 
-
     fprintf('Iter: %i : %i\n',j, history(j));
     
-    figure(1);
-    clf;
-    subplot(2,2,1);
-    estimate_model.show();
-    hold on;
-    plot(x_timegrid, Y, 'red');
-    title('Estimated model');
-
-    subplot(2,2,2);
-    plot(x_timegrid, exp(estimate_model.loggamma));
-    title('gamma');
-
-    subplot(2,2,3);
-    plot(x_timegrid, exp(estimate_model.loglambda));
-    title('lambda');
-
-    subplot(2,2,4);
-    plot(x_timegrid, exp(estimate_model.logeta));
-    title('eta');
+    estimate_model.show(fig1_ax1);
     
+    hold(fig1_ax1,'on');
+    plot(fig1_ax1,x_timegrid, Y, 'red');
+    hold(fig1_ax1,'off');
+    
+    
+    plot(fig1_ax2,x_timegrid, exp(estimate_model.loggamma));
+    plot(fig1_ax3,x_timegrid, exp(estimate_model.loglambda));
+    plot(fig1_ax4,x_timegrid, exp(estimate_model.logeta));
+    
+    title(fig1_ax1,'Estimated model');
+    title(fig1_ax2,'gamma');
+    title(fig1_ax3,'lambda');
+    title(fig1_ax4,'eta');
+
 %     figure(2);
 %     subplot(2,2,1);
 %     plot(gradient_dm);
@@ -114,28 +126,16 @@ for j = 2:J
 %     plot(gradient_dlogeta*(1-b2^j) + mean(gradient_dlogeta)*ones(size(gradient_dlogeta))*(b2^j));
 %     title('gradient logeta');
     
-    figure(9);
-    subplot(2,2,1);
-    plot(x_timegrid, tau * v(1:length(x_timegrid)));
-    title('m update');
-    subplot(2,2,2);
-    plot(x_timegrid, tau * v( (1:length(x_timegrid)) + length(x_timegrid) ));
-    title('loggamma update');
-    subplot(2,2,3);
-    plot(x_timegrid, tau * v( (1:length(x_timegrid)) + 2*length(x_timegrid) ));
-    title('loglambda update');
-    subplot(2,2,4);
-    plot(x_timegrid, tau * v( (1:length(x_timegrid)) + 3*length(x_timegrid) ));
-    title('logeta update');
+    plot(fig9_ax1,x_timegrid, tau * v(1:length(x_timegrid)));
+    plot(fig9_ax2,x_timegrid, tau * v( (1:length(x_timegrid)) + length(x_timegrid) ));
+    plot(fig9_ax3,x_timegrid, tau * v( (1:length(x_timegrid)) + 2*length(x_timegrid) ));
+    plot(fig9_ax4,x_timegrid, tau * v( (1:length(x_timegrid)) + 3*length(x_timegrid) ));
     
-    figure(3);
-    hold off;
-    plot(history);
-    title('score');
+    plot(fig3_ax, history);
+    title(fig3_ax,'score');
     
-    figure(4);
-    semilogy(1:J, hist_tau);
-    title('learning rate');
+    semilogy(fig4_ax,1:J, hist_tau);
+    title(fig4_ax,'learning rate');
     
     drawnow;
 end
