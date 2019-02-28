@@ -66,7 +66,7 @@ classdef nhgpmodel < matlab.mixin.Copyable
             if nargin == 3
                 gp.theta = tocolumn(theta);
             end
-            log_pF = logmvnpdf(F', gp.m', gp.Ky, gp.invKy);
+            log_pF = logmvnpdf(F', gp.m', gp.Ky, gp.invKy);            
         end
         
         function gradient = gradient_dF(gp, F)

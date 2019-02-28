@@ -9,12 +9,12 @@ function logp = logmvnpdf( X , MU , SIGMA, invSIGMA)
 
 [N, D] = size(X);
 x_minus_mu = bsxfun(@minus, X, MU);
+        
 
-
-if(nargin==3)
+if nargin == 3
     k = -D/2*log(2*pi) - sum(log(diag(cholcov(SIGMA,0))));
     logp = k - 0.5*sum((x_minus_mu / SIGMA).*x_minus_mu , 2);
-elseif(nargin==4)
+elseif nargin == 4
     k = -D/2*log(2*pi) - sum(log(diag(cholcov(SIGMA,0))));
     logp = k - 0.5*sum((x_minus_mu * invSIGMA).*x_minus_mu , 2);
 end
