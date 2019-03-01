@@ -68,12 +68,8 @@ while(true)
         plot(a2,x_timegrid, data2);
     end
 
-    
     hold(a1,'off');
 	hold(a2,'off');
-    
-    h.AxesProperties(1).LegendVisible = 'off';
-    h.AxesProperties(2).LegendVisible = 'off';
     
     drawnow
     

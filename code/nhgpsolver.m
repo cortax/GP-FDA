@@ -29,7 +29,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
         end
         function output = theta_max2(obj, gp,  data, exps)
             output = fminunc(@(theta) obj.theta_grad(theta, gp,data,exps),...
-                gp.theta,optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',200));
+                gp.theta,optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',1000));
         end
         
         function [fval,grad] = theta_grad(~,theta, gp, data, exps)
