@@ -8,7 +8,7 @@ nc = floor(n/K);
 
 hyper = make_hyper();
 
-mixture_groundtruth = nhgpmixture(K, ...
+mixture_groundtruth = PLG_nhgpmixture(K, ...
     x_timegrid, ...
     hyper.mu_m, hyper.G_m, hyper.L_m, ...
     hyper.mu_loggamma, hyper.G_loggamma, hyper.L_loggamma, ...
@@ -16,7 +16,7 @@ mixture_groundtruth = nhgpmixture(K, ...
     hyper.mu_logeta, hyper.G_logeta, hyper.L_logeta, ...
         hyper.tol);
 
-mixture_fit = nhgpmixture(K, ...
+mixture_fit = PLG_nhgpmixture(K, ...
     x_timegrid, ...
     hyper.mu_m, hyper.G_m, hyper.L_m, ...
     hyper.mu_loggamma, hyper.G_loggamma, hyper.L_loggamma, ...
@@ -35,7 +35,7 @@ data = [Y1,Y2,Y3,Y4];
 problem.mixture = mixture_fit;
 problem.expectations = repmat(1/K,n,K);
 
-solver = nhgpsolver();
+solver = PLG_nhgpmixturesolver();
 
 figure('units','normalized','outerposition',[0 0 1 1])
 a1 = subplot(4,1,1);
@@ -55,10 +55,10 @@ while(true)
     data3 = data{:,ind==3};
     data4 = data{:,ind==4};
  
-    problem.mixture.gp_component(1).show(a1);
-    problem.mixture.gp_component(2).show(a2);
-    problem.mixture.gp_component(3).show(a3);
-    problem.mixture.gp_component(4).show(a4);    
+    axes(a1); problem.mixture.gp_component(1).show();
+    axes(a2); problem.mixture.gp_component(2).show();
+    axes(a3); problem.mixture.gp_component(3).show();
+    axes(a4); problem.mixture.gp_component(4).show();    
     
     hold(a1,'on');
     hold(a2,'on');

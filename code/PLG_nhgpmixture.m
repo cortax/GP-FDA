@@ -1,4 +1,4 @@
-classdef nhgpmixture < matlab.mixin.Copyable
+classdef PLG_nhgpmixture < matlab.mixin.Copyable
 	properties
         prior nhgpprior
         proportions
@@ -10,7 +10,7 @@ classdef nhgpmixture < matlab.mixin.Copyable
     end
 
 	methods
-		function mixture_model = nhgpmixture(nb_cluster, x_timegrid, mu_m, G_m, L_m, mu_loggamma, G_loggamma, L_loggamma, mu_loglambda, G_loglambda, L_loglambda, mu_logeta, G_logeta, L_logeta, tolerence)
+		function mixture_model = PLG_nhgpmixture(nb_cluster, x_timegrid, mu_m, G_m, L_m, mu_loggamma, G_loggamma, L_loggamma, mu_loglambda, G_loglambda, L_loglambda, mu_logeta, G_logeta, L_logeta, tolerence)
             mixture_model.prior = nhgpprior(x_timegrid, mu_m, G_m, L_m, mu_loggamma, G_loggamma, L_loggamma, mu_loglambda, G_loglambda, L_loglambda, mu_logeta, G_logeta, L_logeta, tolerence);
             mixture_model.gp_component = arrayfun(@(n) nhgpmodel(x_timegrid, ...
                 mixture_model.prior.random_m(), ...
