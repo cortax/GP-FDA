@@ -1,22 +1,34 @@
 classdef nhgpmixture < matlab.mixin.Copyable
 	properties
-        prior
-        proportions
-		gp_component
+        proportion
+		gp_component nhgpmodel
     end
 
 	methods
-		function mixture_model = nhgpmixture(nb_cluster, x_timegrid, mu_m, G_m, L_m, mu_loggamma, G_loggamma, L_loggamma, mu_loglambda, G_loglambda, L_loglambda, mu_logeta, G_logeta, L_logeta, tolerence)
-        	mixture_model.prior = nhgpprior(x_timegrid, mu_m, G_m, L_m, mu_loggamma, G_loggamma, L_loggamma, mu_loglambda, G_loglambda, L_loglambda, mu_logeta, G_logeta, L_logeta, tolerence);
-            mixture_model.gp_component = cell(1,nb_cluster);
-            for k = 1:nb_cluster
-                mixture_model.gp_component{k} = nhgpmodel(x_timegrid, ...
-                                                          mixture_model.prior.random_m(), ...
-                                                          mixture_model.prior.random_loggamma(), ...
-                                                          mixture_model.prior.random_loglambda(), ...
-                                                          mixture_model.prior.random_logeta());
-            end
-            mixture_model.proportions = ones(1,nb_cluster)./nb_cluster;
+		function mixture_model = nhgpmixture()
+            mixture_model.proportions = zeros(1,0);
+            mixture_model.gp_component = [];
+        end
+        
+        function add_component(mixture_model, p, nhgpmodel)
+            mixture_model.proportion = mixture_model.proportion * (1-p);
+            mixture_model.proportion(end+1) = p;
+            mixture_model.proportion = mixture_model.proportion ./ (sum(mixture_model.proportion));
+            mixture_model.gp_component(end+1) = nhgpmodel;
+        end
+        
+        function remove_component(mixture_model, c)
+            mixture_model.proportion(c) = [];
+            mixture_model.proportion = mixture_model.proportion ./ (sum(mixture_model.proportion));
+            mixture_model.gp_component(c) = [];
+        end
+        
+        function logpdf(mixture_model)
+            
+        end
+        
+        function random(mixture_model, N)
+            
         end
     end
 end

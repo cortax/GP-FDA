@@ -73,19 +73,21 @@ classdef nhgpmodel < matlab.mixin.Copyable
             gradient = -gp.invKy*(F - repmat(gp.m,1,size(F,2)));
         end
         
-        function gradient = gradient_dm(gp, F)
-            gradient = sum(gp.invKy*(F - repmat(gp.m, 1, size(F,2))),2);
+        function [gradient, gradientF] = gradient_dm(gp, F)
+            gradientF = gp.invKy*(F - repmat(gp.m, 1, size(F,2)));
+            gradient = sum(gradientF,2);
         end
         
-        function gradient = gradient_dloggamma(gp, F)
-            gradient = zeros(gp.T, 1);
+        function [gradient, gradientF] = gradient_dloggamma(gp, F)
+            gradientF = zeros(size(F));
             for i_data = 1:size(F,2)
                 a = gp.invKy*(F(:,i_data) - gp.m);
-                gradient = gradient + diag((a*a' - gp.invKy)*gp.Kf);
+                gradientF(:,i_data) = diag((a*a' - gp.invKy)*gp.Kf);
             end
+            gradient = sum(gradientF,2);
         end
         
-        function gradient = gradient_dloglambda(gp, F)
+        function [gradient, gradientF] = gradient_dloglambda(gp, F)
             lambda = exp(gp.loglambda);
             gamma = exp(gp.loggamma);
 
@@ -95,27 +97,29 @@ classdef nhgpmodel < matlab.mixin.Copyable
             dK = (lambda*lambda') .* (gamma*gamma') .* E .* (R.^(-1)) .* (L.^(-3)) .* (4 * gp.D .* repmat(lambda.^2,1,gp.T) - repmat(lambda.^4,1,gp.T) + repmat(lambda'.^4,gp.T,1));
 
             A = gp.invKy*(F - repmat(gp.m, 1, size(F,2)));
+            gradientF = A.*(A'*dK')' - repmat(sum(gp.invKy.*dK,2),1,size(F,2));
             gradient = sum(A.*(A'*dK')',2) + -size(F,2)*sum(gp.invKy.*dK,2);
         end
             
-        function gradient = gradient_dlogeta(gp, F)
-            dl_data = zeros(size(F));
+        function [gradient, gradientF] = gradient_dlogeta(gp, F)
+            gradientF = zeros(size(F));
             for i_data = 1:size(F,2)
                 alpha_i = gp.invKy*(F(:,i_data)-gp.m);
                 KetaFactor = alpha_i*alpha_i' - gp.invKy;
 
                 dK = diag( 2.*exp(2*gp.logeta) );
-                dl_data(:, i_data) = 0.5 * diag(KetaFactor*dK);
+                gradientF(:, i_data) = 0.5 * diag(KetaFactor*dK);
             end
-            gradient = sum(dl_data,2);
+            gradient = sum(gradientF,2);
         end
         
-        function [gradient, gradient_dm, gradient_dloggamma, gradient_dloglambda, gradient_dlogeta] = gradient_dtheta(gp, F)
-            gradient_dm = gp.gradient_dm(F); 
-            gradient_dloggamma = gp.gradient_dloggamma(F);
-            gradient_dloglambda = gp.gradient_dloglambda(F); 
-            gradient_dlogeta = gp.gradient_dlogeta(F);
+        function [gradient, gradientF] = gradient_dtheta(gp, F)
+            [gradient_dm, gradient_dmF] = gp.gradient_dm(F); 
+            [gradient_dloggamma, gradient_dloggammaF] = gp.gradient_dloggamma(F);
+            [gradient_dloglambda, gradient_dloglambdaF] = gp.gradient_dloglambda(F); 
+            [gradient_dlogeta, gradient_dlogetaF] = gp.gradient_dlogeta(F);
             gradient = [gradient_dm; gradient_dloggamma; gradient_dloglambda; gradient_dlogeta];
+            gradientF = [gradient_dmF; gradient_dloggammaF; gradient_dloglambdaF; gradient_dlogetaF];
         end
         
         function gradient = gradient_dF_numeric(gp, F)
