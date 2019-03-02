@@ -18,7 +18,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
         
         function problem = M_step(obj, problem, data)
             gps = problem.mixture.gp_component;
-            for n = 1:1
+            for n = 1:numel(gps)
                 %gps(n).theta = obj.theta_max1(gps(n), data{:,:} ,problem.expectations(:,n));
                 gps(n).theta = obj.theta_max2(gps(n), data{:,:} ,problem.expectations(:,n));
             end
@@ -29,7 +29,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
         end
         function output = theta_max2(obj, gp,  data, exps)
             output = fminunc(@(theta) obj.theta_grad(theta, gp,data,exps),...
-                gp.theta,optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',1000));
+                gp.theta,optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',500));
         end
         
         function [fval,grad] = theta_grad(~,theta, gp, data, exps)
