@@ -23,7 +23,7 @@ classdef nhgpmixture < matlab.mixin.Copyable
             mixture_model.gp_component(c) = [];
         end
         
-        function logpdf(mixture_model)
+        function log_pF = logpdf(mixture_model, F)
             
         end
         

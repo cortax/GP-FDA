@@ -23,15 +23,31 @@ classdef nhgpsolver < matlab.mixin.Copyable
             assert(length(x_timegrid) == size(data,1), 'invalid shape data matrix');
             
             switch algorithm
-               case 'white_nesterov'
+               case 'white-nesterov'
                   [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(solver, data, J, estimate_model);
-               case 'white_nesterov_parallel'
+               case 'white-nesterov-parallel'
                   [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(solver, data, J, estimate_model); 
                case 'quasi-newton'
-                  error('not implemented yet');
+                  [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(solver, data, J, estimate_model);
                otherwise
                   error('invalid optimization algorithm');
             end
+        end
+        
+        function [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(solver, data, J, estimate_model)
+            function [fval,grad] = theta_grad(theta, gp, data)
+                fval = -sum(gp.logpdf(data, theta));
+                if nargout>1
+                    grad = -gp.gradient_dtheta(data);
+                end
+            end
+            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J);
+            theta0 = estimate_model.theta;
+            f = @(theta) theta_grad(theta, estimate_model, data);
+            [theta, score] = fminunc(f, theta0, options);
+            score = -score;
+            estimate_model.theta = theta;
+            nhgp_MAP = estimate_model;
         end
         
         function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(solver, data, J, estimate_model) 
