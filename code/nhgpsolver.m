@@ -18,7 +18,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
             end
             
             if nargin < 4
-                J = 5000;
+                J = 100000;
             end
             assert(length(x_timegrid) == size(data,1), 'invalid shape data matrix');
             
@@ -36,9 +36,9 @@ classdef nhgpsolver < matlab.mixin.Copyable
         
         function [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(solver, data, J, estimate_model)
             function [fval,grad] = theta_grad(theta, gp, data)
-                fval = -sum(gp.logpdf(data, theta));
+                fval = -sum(gp.logpdf(data, theta)) - solver.prior.logpdf(gp.theta); 
                 if nargout>1
-                    grad = -gp.gradient_dtheta(data);
+                    grad = -gp.gradient_dtheta(data) - solver.prior.gradient(gp.theta);
                 end
             end
             options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J);
@@ -112,6 +112,12 @@ classdef nhgpsolver < matlab.mixin.Copyable
                 hist_v(:,j) = v;
 
                 fprintf('Iter: %i : %i\n',j, history(j));
+                
+                if j > 50
+                    if std(history(j-50:j)) < 1e-3
+                        break;
+                    end
+                end
             end
             nhgp_MAP = estimate_model;
             score = history(j);

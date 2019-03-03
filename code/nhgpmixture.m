@@ -5,9 +5,9 @@ classdef nhgpmixture < matlab.mixin.Copyable
     end
 
 	methods
-		function mixture_model = nhgpmixture()
-            mixture_model.proportions = zeros(1,0);
-            mixture_model.gp_component = [];
+		function mixture_model = nhgpmixture(proportion, gp_component_array)
+            mixture_model.proportion = proportion;
+            mixture_model.gp_component = gp_component_array;
         end
         
         function add_component(mixture_model, p, nhgpmodel)
@@ -23,12 +23,21 @@ classdef nhgpmixture < matlab.mixin.Copyable
             mixture_model.gp_component(c) = [];
         end
         
-        function log_pF = logpdf(mixture_model, F)
+        function R = membership_logproba(mixture_model, data)
             
         end
         
-        function random(mixture_model, N)
+        function log_pF = logpdf(mixture_model, data)
             
+        end
+        
+        function [data, Z] = random(mixture_model, N)
+            if nargin < 2
+                N = 1;
+            end
+            Z = mnrnd(1, mixture_model.proportion, N)';
+            [idx_Z,~] = find(Z);
+            data = cell2mat(arrayfun(@(k) mixture_model.gp_component(k).random(), idx_Z, 'UniformOutput', false)');
         end
     end
 end

@@ -1,14 +1,12 @@
 classdef PLG_nhgpmixturesolver < matlab.mixin.Copyable
     
     properties
-        E_method
-        F_method
+
     end
     
     methods
-        function obj = PLG_nhgpmixturesolver(E_method, F_method)
-            obj.E_method = E_method;
-            obj.F_method = F_method;
+        function obj = PLG_nhgpmixturesolver()
+
         end
         
         function problem = E_step(~,problem, data)
