@@ -33,7 +33,17 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
         
         function [nhgpmixture_MAP, score] = compute_EM_estimate_GEM(solver, data, J, estimate_model)
             solver;
-            
+            history = NaN(1,J);
+            history(1) = sum(estimate_model.logpdf(data)) + solver.prior.logpdf(estimate_model.theta);
+            hist_tau = NaN(1,J);
+            hist_theta = NaN(length(estimate_model.theta), J);
+            hist_theta(:,1) = estimate_model.theta;
+
+            tau = 0.001;
+            b1 = 0.5;
+            v = zeros(size(estimate_model.theta));
+
+            hist_v(:,1) = v;
         end
         
         function GEM_E_step(solver, data)

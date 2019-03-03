@@ -9,13 +9,12 @@ G0 = nhgpprior(x_timegrid, ...
                   hyper.mu_logeta, hyper.G_logeta, hyper.L_logeta, ...
                   hyper.tol);
               
-alpha = 0.5;
-K = 3;
+alpha = 1.5;
 
-prior = nhgpmixtureprior(alpha, G0, K);
+prior = nhgpmixtureprior(alpha, G0);
 
 groundtruth_mixture = prior.random_nhgpmixture();
-data = groundtruth_mixture.random(30);
+[data, Z] = groundtruth_mixture.random(30);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -27,5 +26,3 @@ algorithm = 'GEM';
 J = 1000;
 initial_nhgpmixture = prior.random_nhgpmixture();
 [nhgpmixture_MAP, score] = compute_EM_estimate(solver, data, algorithm, J, initial_nhgpmixture);
-
-
