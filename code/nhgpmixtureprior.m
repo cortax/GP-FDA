@@ -10,11 +10,16 @@ classdef nhgpmixtureprior < matlab.mixin.Copyable
             assert(alpha >= 1.0, 'alpha must be greater or equal to 1.0');
             prior.alpha = alpha;
             prior.G0 = G0;
-            prior.K = 100; % Trucation approximation, can be increased
+            prior.K = 10; % Trucation approximation, can be increased
         end
         
-        function logP = logpdf(prior, nhgpmixture)
-
+        function logP = logpdf(obj, nhgpmixture)
+%             logprop = log(nhgpmixture.proportion);
+%             logv = zeros(size(p));
+%             for k = 1:obj.K-1
+%                 logv(k) = real(logprop(k) - sum(log( 1 - exp(logv(1:k-1)) )));
+%             end 
+            logP = sum(cell2mat(arrayfun(@(k) obj.G0.logpdf(nhgpmixture.gp_component(k).theta), 1:obj.K, 'UniformOutput', false)));
         end
         
         function [p, v] = stickbreaking(~, alpha, N)

@@ -13,7 +13,7 @@ alpha = 1.5;
 
 prior = nhgpmixtureprior(alpha, G0);
 groundtruth_mixture = prior.random_nhgpmixture();
-[data, Z] = groundtruth_mixture.random(30);
+[data, Z] = groundtruth_mixture.random(500);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

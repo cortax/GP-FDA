@@ -30,7 +30,9 @@ classdef nhgpmixture < matlab.mixin.Copyable
         end
         
         function log_pF = logpdf(obj, data)
-            log_pF = 1;
+            w = repmat(log(obj.proportion)',1,size(data,2));
+            P = cell2mat(arrayfun(@(k) obj.gp_component(k).logpdf(data), 1:length(obj.gp_component), 'UniformOutput', false))';
+            log_pF = sum(logsumexp(w+P));
         end
         
         function [data, Z] = random(obj, N)
