@@ -10,12 +10,12 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
             solver.prior = prior;
         end
         
-        function [nhgpmixture_MAP, score] = compute_EM_estimate(solver, data, algorithm, J, initial_nhgpmixture)
+        function [nhgpmixture_MAP, score] = compute_EM_estimate(obj, data, algorithm, J, initial_nhgpmixture)
             if nargin > 4
                 estimate_mixture = initial_nhgpmixture;
                 x_timegrid = initial_nhgpmixture.gp_component.x_timegrid;
             else
-                x_timegrid = solver.prior.m_gpprior.x_timegrid;
+                x_timegrid = obj.prior.m_gpprior.x_timegrid;
                 estimate_mixture = nhgpmodel(x_timegrid, mean(data,2), log(1.0)*ones(size(x_timegrid)), log(0.01)*ones(size(x_timegrid)), log(1.0)*ones(size(x_timegrid)));
             end
             
@@ -27,44 +27,37 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
             
             switch algorithm
                case 'GEM'
-                  [nhgpmixture_MAP, score] = compute_EM_estimate_GEM(solver, data, J, estimate_mixture);
+                  [nhgpmixture_MAP, score] = compute_EM_estimate_GEM(obj, data, J, estimate_mixture);
                otherwise
                   error('invalid optimization algorithm');
             end
         end
         
-        function [nhgpmixture_MAP, score] = compute_EM_estimate_GEM(solver, data, J, estimate_model)
-            solver;
-            history = NaN(1,J);
-            history(1) = sum(estimate_model.logpdf(data)) + solver.prior.logpdf(estimate_model.theta);
-            hist_tau = NaN(1,J);
-            hist_theta = NaN(length(estimate_model.theta), J);
-            hist_theta(:,1) = estimate_model.theta;
+        function [nhgpmixture_MAP, score] = compute_EM_estimate_GEM(obj, data, J, estimate_mixture)
+            for j = 1:J
+                % E-step
+                E_MP = estimate_mixture.membership_logproba(data);
 
-            tau = 0.001;
-            b1 = 0.5;
-            v = zeros(size(estimate_model.theta));
+                % M-step proportions
+                v = zeros(1,obj.prior.K);
+                S = sum(exp(E_MP),2);
+                for k = 1:obj.prior.K-1
+                    v(k) = S(k) / (S(k) + obj.prior.alpha - 1 + sum(S(k+1:end)));
+                end
 
-            hist_v(:,1) = v;
-        end
-        
-        function GEM_E_step(~, data)
-            problem.logexpectations = log(problem.mixture.proportions) +...
-                cell2mat(arrayfun(@(gp) gp.logpdf(data{:,:}), problem.mixture.gp_component, 'UniformOutput', false) );
-            problem.logexpectations = problem.logexpectations - logsumexp(problem.logexpectations,2);
+                v(obj.prior.K) = 1;
+                vinv = 1 - v;
+                estimate_mixture.proportion = arrayfun(@(n) v(n)*prod(vinv(1:n-1)), 1:obj.prior.K);
 
-            problem.expectations = exp(problem.logexpectations);
-        end
-        
-        function GEM_M_step(~, data)
-            gps = problem.mixture.gp_component;
-            
-            for n = 1:numel(gps)
-                %gps(n).theta = obj.theta_max1(gps(n), data{:,:} ,problem.expectations(:,n));
-                gps(n).theta = obj.theta_max2(gps(n), data{:,:} ,problem.expectations(:,n));
+                % M-step theta
+                solver = nhgpsolver(obj.prior.G0);
+                nb_gradient_step_on_theta = 1;
+                for k=1:obj.prior.K
+                    estimate_mixture.gp_component(k) = solver.compute_MAP_estimate(data, algorithm, nb_gradient_step_on_theta, estimate_mixture.gp_component(k));
+                end
             end
-            problem.mixture.proportions = mean(problem.expectations,1);
+            nhgpmixture_MAP = estimate_mixture;
+            score = NaN;
         end
-
     end
 end

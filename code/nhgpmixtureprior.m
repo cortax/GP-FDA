@@ -14,21 +14,24 @@ classdef nhgpmixtureprior < matlab.mixin.Copyable
         end
         
         function logP = logpdf(prior, nhgpmixture)
-            if prior.K < Inf
-                mixture = nhgpmixture(dirichletrnd(ones(1,prior.K).*prior.alpha), ...
-                                      arrayfun(@(n) prior.G0.random_nhgp(), 1:prior.K));
-            else
-                %Truncated dirichlet process sample
-            end
+
+        end
+        
+        function [p, v] = stickbreaking(~, alpha, N)
+            v = betarnd(1, alpha, 1, N);
+            v(N) = 1;
+            vinv = 1 - v;
+            p = arrayfun(@(n) v(n)*prod(vinv(1:n-1)), 1:N);
         end
         
         function mixture = random_nhgpmixture(prior)
-            if prior.K < Inf
-                mixture = nhgpmixture(dirichletrnd(ones(1,prior.K).*prior.alpha), ...
-                                      arrayfun(@(n) prior.G0.random_nhgp(), 1:prior.K));
-            else
-                %Truncated dirichlet process sample
+            % Random mixture incorrect pour les proportions
+            proportion = prior.stickbreaking(prior.alpha, prior.K);
+            gp_component_array = prior.G0.random_nhgp();
+            for k = 1:prior.K-1
+                gp_component_array(end+1) = prior.G0.random_nhgp();
             end
+            mixture = nhgpmixture(proportion, gp_component_array);
         end
     end
 end

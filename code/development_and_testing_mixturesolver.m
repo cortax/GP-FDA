@@ -19,9 +19,13 @@ groundtruth_mixture = prior.random_nhgpmixture();
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+R = groundtruth_mixture.membership_logproba(data);
+
 solver = nhgpmixturesolver(prior);
 
 algorithm = 'GEM';
 J = 1000;
 initial_nhgpmixture = prior.random_nhgpmixture();
+
+
 [nhgpmixture_MAP, score] = compute_EM_estimate(solver, data, algorithm, J, initial_nhgpmixture);

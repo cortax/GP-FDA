@@ -23,8 +23,10 @@ classdef nhgpmixture < matlab.mixin.Copyable
             obj.gp_component(c) = [];
         end
         
-        function R = membership_logproba(obj, data)
-            
+        function logP = membership_logproba(obj, data)
+            unnorm_logP = repmat(log(obj.proportion)',1,size(data,2)) + ...
+                cell2mat(arrayfun(@(k) obj.gp_component(k).logpdf(data), 1:length(obj.gp_component), 'UniformOutput', false))';
+            logP = unnorm_logP - repmat(logsumexp(unnorm_logP),size(unnorm_logP,1),1);
         end
         
         function log_pF = logpdf(obj, data)
@@ -32,14 +34,11 @@ classdef nhgpmixture < matlab.mixin.Copyable
         end
         
         function [data, Z] = random(obj, N)
-            
             if nargin < 2
                 N = 1;
             end
-            
             Z = mnrnd(1, obj.proportion, N)';
             [idx_Z,~] = find(Z);
-            
             data = cell2mat(arrayfun(@(gp) gp.random(), obj.gp_component(idx_Z)', 'UniformOutput', false)');
         end
     end
