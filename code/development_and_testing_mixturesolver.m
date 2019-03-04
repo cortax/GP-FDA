@@ -12,7 +12,6 @@ G0 = nhgpprior(x_timegrid, ...
 alpha = 1.5;
 
 prior = nhgpmixtureprior(alpha, G0);
-
 groundtruth_mixture = prior.random_nhgpmixture();
 [data, Z] = groundtruth_mixture.random(30);
 

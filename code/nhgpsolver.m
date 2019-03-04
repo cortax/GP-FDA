@@ -1,6 +1,7 @@
 classdef nhgpsolver < matlab.mixin.Copyable
 	properties
         prior nhgpprior
+        max_iterations = 10
     end
     
    	methods
@@ -8,59 +9,67 @@ classdef nhgpsolver < matlab.mixin.Copyable
             solver.prior = prior;
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate(solver, data, algorithm, J, initial_nhgp)
-            if nargin > 4
+        function [nhgp_MAP, score] = compute_MAP_estimate(solver, data, algorithm, initial_nhgp)
+            
+            if nargin > 3
                 estimate_model = initial_nhgp;
                 x_timegrid = initial_nhgp.x_timegrid;
             else
                 x_timegrid = solver.prior.m_gpprior.x_timegrid;
                 estimate_model = nhgpmodel(x_timegrid, mean(data,2), log(1.0)*ones(size(x_timegrid)), log(0.01)*ones(size(x_timegrid)), log(1.0)*ones(size(x_timegrid)));
             end
-            
-            if nargin < 4
-                J = 100000;
-            end
+                        
             assert(length(x_timegrid) == size(data,1), 'invalid shape data matrix');
             
             switch algorithm
                case 'white-nesterov'
-                  [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(solver, data, J, estimate_model);
+                  score = solver.compute_MAP_estimate_white_nesterov(data, estimate_model);
                case 'white-nesterov-parallel'
-                  [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(solver, data, J, estimate_model); 
+                  score = solver.compute_MAP_estimate_white_nesterov_parallel(data, estimate_model); 
                case 'quasi-newton'
-                  [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(solver, data, J, estimate_model);
+                  score = solver.compute_MAP_estimate_quasi_newton(data, estimate_model);
                otherwise
                   error('invalid optimization algorithm');
             end
+            nhgp_MAP = estimate_model;
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(solver, data, J, estimate_model)
+        function score = compute_MAP_estimate_quasi_newton(solver, data, estimate_model)
+
             function [fval,grad] = theta_grad(theta, gp, data)
                 fval = -sum(gp.logpdf(data, theta)) - solver.prior.logpdf(gp.theta); 
                 if nargout>1
                     grad = -gp.gradient_dtheta(data) - solver.prior.gradient(gp.theta);
                 end
             end
-            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J);
-            theta0 = estimate_model.theta;
-            f = @(theta) theta_grad(theta, estimate_model, data);
-            [theta, score] = fminunc(f, theta0, options);
+            
+            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS',...
+                'SpecifyObjectiveGradient',true, 'Display','iter-detailed', 'MaxIterations',solver.max_iterations,...
+                'OptimalityTolerance',1e-4);
+            
+            [theta, score] = fminunc(@(theta) theta_grad(theta, estimate_model, data), estimate_model.theta, options);
+            
             score = -score;
             estimate_model.theta = theta;
             nhgp_MAP = estimate_model;
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(solver, data, J, estimate_model) 
-            candidate = {estimate_model, solver.prior.random_nhgp(), solver.prior.random_nhgp(), solver.prior.random_nhgp()};
-            MAP_results = zeros(1,4);
-            parfor v = 1:4
-                [candidate{v}, MAP_results(v)] = compute_MAP_estimate_white_nesterov(solver, data, J, candidate{v});
+        function score = compute_MAP_estimate_white_nesterov_parallel(solver, data, estimate_model) 
+            n_cores = feature('numcores');
+
+            candidate = [estimate_model, arrayfun(@(n) solver.prior.random_nhgp(),1:n_cores)];
+            MAP_results = zeros(1,n_cores);
+            
+            parfor v = 1:n_cores
+                MAP_results(v) = compute_MAP_estimate_white_nesterov(solver, data, candidate(v));
             end
+            
             [score, v] = max(MAP_results);
             nhgp_MAP = candidate{v};
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(solver, data, J, estimate_model)
+        function score = compute_MAP_estimate_white_nesterov(solver, data, estimate_model)
+            J = solver.max_iterations;
             history = NaN(1,J);
             history(1) = sum(estimate_model.logpdf(data)) + solver.prior.logpdf(estimate_model.theta);
             hist_tau = NaN(1,J);
@@ -119,7 +128,6 @@ classdef nhgpsolver < matlab.mixin.Copyable
                     end
                 end
             end
-            nhgp_MAP = estimate_model;
             score = history(j);
         end
     end

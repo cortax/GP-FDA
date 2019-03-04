@@ -25,14 +25,15 @@ classdef PLG_nhgpmixturesolver < matlab.mixin.Copyable
             end
             problem.mixture.proportions = mean(problem.expectations,1);
         end
+        
         function output = theta_max1(obj, gp,  data, exps)
             
         end
+        
         function output = theta_max2(obj, gp,  data, exps)
-            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',500);
-            theta0 = gp.theta;
-            f = @(theta) obj.theta_grad(theta, gp,data,exps);
-            output = fminunc(f, theta0, options);
+            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS',...
+                'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',500);
+            output = fminunc(@(theta) obj.theta_grad(theta, gp,data,exps), gp.theta, options);
         end
         
         function [fval,grad] = theta_grad(~,theta, gp, data, exps)

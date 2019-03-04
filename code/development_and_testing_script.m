@@ -13,7 +13,7 @@ groundtruth_model = prior.random_nhgp();
 data = groundtruth_model.random(30);
 
 solver = nhgpsolver(prior);
-[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'white_nesterov');
+[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'white-nesterov');
 
 nhgp_MAP.show();
 hold on;

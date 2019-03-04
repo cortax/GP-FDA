@@ -2,6 +2,7 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
     
     properties
         prior nhgpmixtureprior
+        probabilities;
     end
     
     methods
@@ -21,6 +22,7 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
             if nargin < 4
                 J = 100000;
             end
+            
             assert(length(x_timegrid) == size(data,1), 'invalid shape data matrix');
             
             switch algorithm
@@ -46,15 +48,17 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
             hist_v(:,1) = v;
         end
         
-        function GEM_E_step(solver, data)
+        function GEM_E_step(~, data)
             problem.logexpectations = log(problem.mixture.proportions) +...
                 cell2mat(arrayfun(@(gp) gp.logpdf(data{:,:}), problem.mixture.gp_component, 'UniformOutput', false) );
             problem.logexpectations = problem.logexpectations - logsumexp(problem.logexpectations,2);
 
             problem.expectations = exp(problem.logexpectations);
         end
-        function GEM_M_step(solver, data)
+        
+        function GEM_M_step(~, data)
             gps = problem.mixture.gp_component;
+            
             for n = 1:numel(gps)
                 %gps(n).theta = obj.theta_max1(gps(n), data{:,:} ,problem.expectations(:,n));
                 gps(n).theta = obj.theta_max2(gps(n), data{:,:} ,problem.expectations(:,n));

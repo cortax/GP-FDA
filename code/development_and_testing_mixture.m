@@ -34,7 +34,7 @@ data = horzcat(Y{:});
 problem.mixture = mixture_fit;
 problem.expectations = repmat(1/K,n,K);
 
-solver = nhgpsolver();
+solver = PLG_nhgpmixturesolver();
 
 figure('units','normalized','outerposition',[0 0 1 1])
 a = arrayfun(@(k) subplot(K,1,k),1:K);
@@ -49,7 +49,8 @@ while(true)
         cla(a(k));
         
         datak = data{:,ind==k};
-        problem.mixture.gp_component(k).show(a(k));
+        subplot(K,1,k);
+        problem.mixture.gp_component(k).show();
         
         hold(a(k),'on');
         if ~isempty(datak)

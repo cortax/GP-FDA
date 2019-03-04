@@ -15,7 +15,7 @@ data = groundtruth_model.random(30);
 solver = nhgpsolver(prior);
 
 tic;
-[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'quasi-newton')
+[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'quasi-newton');
 toc
 
 
