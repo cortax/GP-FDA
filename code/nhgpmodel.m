@@ -79,7 +79,7 @@ classdef nhgpmodel < matlab.mixin.Copyable
         
         function gradient = gradient_dloggamma(gp, F,exps)
             a = gp.invKy*(F(:,:) - gp.m);                
-            gradient = cell2mat(arrayfun(@(n) diag((a(:,n)*a(:,n)' - gp.invKy)*gp.Kf),...
+                gradient = cell2mat(arrayfun(@(n) diag((a(:,n)*a(:,n)' - gp.invKy)*gp.Kf),...
                 1:size(F,2),'UniformOutput',false))*exps;
         end
         

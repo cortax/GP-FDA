@@ -1,6 +1,7 @@
 classdef nhgpsolver < matlab.mixin.Copyable
     
     properties
+        max_iterations = 500
     end
     
     methods
@@ -29,11 +30,12 @@ classdef nhgpsolver < matlab.mixin.Copyable
         end
         function output = theta_max2(obj, gp,  data, exps)
             output = fminunc(@(theta) obj.theta_grad(theta, gp,data,exps),...
-                gp.theta,optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',500));
+                gp.theta,optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS',...
+                'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',obj.max_iterations));
         end
         
         function [fval,grad] = theta_grad(~,theta, gp, data, exps)
-            fval = -dot(gp.logpdf(data,theta), exps);
+            fval = -dot(gp.logpdf(data,theta), exps);   
             if nargout>1
                 grad = -gp.gradient_dtheta(data(:,:),exps);
                 %grad = -gp.gradient_dtheta(data)*exps;

@@ -64,5 +64,6 @@ while(true)
     problem = solver.E_step(problem, data);
     problem = solver.M_step(problem, data);
 end
+
 %profile viewer
 %profile off
