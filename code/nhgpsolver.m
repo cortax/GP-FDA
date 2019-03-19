@@ -41,7 +41,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
                     grad = -gp.gradient_dtheta(data) - obj.prior.gradient(gp.theta);
                 end
             end
-            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J);
+            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, 'OptimalityTolerance',.1);
             theta0 = estimate_model.theta;
             f = @(theta) theta_grad(theta, estimate_model, data);
             [theta, score] = fminunc(f, theta0, options);

@@ -27,5 +27,8 @@ algorithm = 'GEM';
 J = 1000;
 initial_nhgpmixture = prior.random_nhgpmixture();
 
+for k = 1:length(initial_nhgpmixture.gp_component)
+    initial_nhgpmixture.gp_component(k) = nhgpmodel(x_timegrid, mean(data,2), log(1.0)*ones(size(x_timegrid)), log(0.01)*ones(size(x_timegrid)), log(1.0)*ones(size(x_timegrid)));
+end
 
 [nhgpmixture_MAP, score] = compute_EM_estimate(solver, data, algorithm, J, initial_nhgpmixture);

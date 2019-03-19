@@ -43,6 +43,16 @@ classdef nhgpmixture < matlab.mixin.Copyable
             [idx_Z,~] = find(Z);
             data = cell2mat(arrayfun(@(gp) gp.random(), obj.gp_component(idx_Z)', 'UniformOutput', false)');
         end
+        
+%         function show(obj, nbStd)
+%             if nargin < 2
+%                 nbStd = 1.96;
+%             end
+%             hold on;
+%             for k = 1:length(obj.gp_component)
+%                 obj.gp_component(k).show(nbStd);
+%             end
+%         end
     end
 end
 
