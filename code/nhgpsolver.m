@@ -8,7 +8,13 @@ classdef nhgpsolver < matlab.mixin.Copyable
             solver.prior = prior;
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate(obj, data, algorithm, J, initial_nhgp)
+        function [nhgp_MAP, score] = compute_MAP_estimate(obj, data, algorithm, J, initial_nhgp, data_importance, optimality_tol)
+            if nargin < 7
+                optimality_tol = 0.5;
+            end
+            if nargin < 6
+                data_importance = ones(1,size(data,1));
+            end
             if nargin > 4
                 estimate_model = initial_nhgp;
                 x_timegrid = initial_nhgp.x_timegrid;
@@ -24,33 +30,48 @@ classdef nhgpsolver < matlab.mixin.Copyable
             
             switch algorithm
                case 'white-nesterov'
-                  [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(obj, data, J, estimate_model);
+                  %[nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(obj, data, J, estimate_model, data_importance);
                case 'white-nesterov-parallel'
-                  [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(obj, data, J, estimate_model); 
+                  %[nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(obj, data, J, estimate_model, data_importance); 
                case 'quasi-newton'
-                  [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(obj, data, J, estimate_model);
+                  [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(obj, data, J, estimate_model, data_importance, optimality_tol);
                otherwise
                   error('invalid optimization algorithm');
             end
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(obj, data, J, estimate_model)
-            function [fval,grad] = theta_grad(theta, gp, data)
-                fval = -sum(gp.logpdf(data, theta)) - obj.prior.logpdf(gp.theta); 
+        function [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(obj, data, J, estimate_model, data_importance, optimality_tol)
+            function [fval,grad] = theta_grad(theta, gp, data, importance)
+                fval = -dot(gp.logpdf(data, theta), importance) - obj.prior.logpdf(gp.theta); 
                 if nargout>1
-                    grad = -gp.gradient_dtheta(data) - obj.prior.gradient(gp.theta);
+                    [~, data_gradF] = gp.gradient_dtheta(data);
+                    grad = -sum(bsxfun(@times, data_gradF, importance),2) - obj.prior.gradient(gp.theta);
                 end
             end
-            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, 'OptimalityTolerance',.1);
+            f = @(theta) theta_grad(theta, estimate_model, data, data_importance);
+            
+            options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','UseParallel',true, ...
+                                   'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, 'OptimalityTolerance', optimality_tol);
             theta0 = estimate_model.theta;
-            f = @(theta) theta_grad(theta, estimate_model, data);
+            
+            % test simple mean adjustment optimization step 
+            fval0 = f(theta0);
+            estimate_model.m = mean(bsxfun(@times, data, data_importance),2);
+            thetam = estimate_model.theta;
+            fvalm = f(thetam);
+            if fvalm < fval0
+                theta0 = thetam;
+                estimate_model.theta = theta0;
+            end
+                
             [theta, score] = fminunc(f, theta0, options);
+            
             score = -score;
             estimate_model.theta = theta;
             nhgp_MAP = estimate_model;
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(obj, data, J, estimate_model) 
+        function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(obj, data, J, estimate_model, data_importance, optimality_tol) 
             candidate = {estimate_model, obj.prior.random_nhgp(), obj.prior.random_nhgp(), obj.prior.random_nhgp()};
             MAP_results = zeros(1,4);
             parfor v = 1:4
@@ -60,7 +81,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
             nhgp_MAP = candidate{v};
         end
         
-        function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(obj, data, J, estimate_model)
+        function [nhgp_MAP, score] = compute_MAP_estimate_white_nesterov(obj, data, J, estimate_model, data_importance, optimality_tol)
             history = NaN(1,J);
             history(1) = sum(estimate_model.logpdf(data)) + obj.prior.logpdf(estimate_model.theta);
             hist_tau = NaN(1,J);

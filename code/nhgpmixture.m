@@ -44,6 +44,12 @@ classdef nhgpmixture < matlab.mixin.Copyable
             data = cell2mat(arrayfun(@(gp) gp.random(), obj.gp_component(idx_Z)', 'UniformOutput', false)');
         end
         
+        function reorder_components(obj)
+            [p_, order] = sort(obj.proportion, 'descend');
+            obj.gp_component = obj.gp_component(order);
+            obj.proportion = p_;
+        end
+        
 %         function show(obj, nbStd)
 %             if nargin < 2
 %                 nbStd = 1.96;

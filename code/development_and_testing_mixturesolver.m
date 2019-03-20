@@ -15,20 +15,35 @@ prior = nhgpmixtureprior(alpha, G0);
 groundtruth_mixture = prior.random_nhgpmixture();
 [data, Z] = groundtruth_mixture.random(500);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-R = groundtruth_mixture.membership_logproba(data);
-
-solver = nhgpmixturesolver(prior);
-
-algorithm = 'GEM';
-J = 1000;
-initial_nhgpmixture = prior.random_nhgpmixture();
-
-for k = 1:length(initial_nhgpmixture.gp_component)
-    initial_nhgpmixture.gp_component(k) = nhgpmodel(x_timegrid, mean(data,2), log(1.0)*ones(size(x_timegrid)), log(0.01)*ones(size(x_timegrid)), log(1.0)*ones(size(x_timegrid)));
+figure(302);
+clf;
+nb_plot = ceil(sqrt(nnz(sum(Z'))));
+i_plot = 1;
+for k = 1:size(Z,1)
+    idx = Z(k,:) == 1;
+    if any(idx)
+        subplot(nb_plot, nb_plot, i_plot);
+        groundtruth_mixture.gp_component(k).show();
+        hold on;
+        plot(x_timegrid, data(:, idx));
+        hold off;
+        i_plot = i_plot + 1;
+    end
 end
+global gt_labels;
+[gt_labels, ~] = find(Z);
+sum(Z')
 
-[nhgpmixture_MAP, score] = compute_EM_estimate(solver, data, algorithm, J, initial_nhgpmixture);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+initial_nhgpmixture = prior.random_nhgpmixture();
+%init_solver = nhgpsolver(G0);
+%initial_nhgpmixture.gp_component(1) = init_solver.compute_MAP_estimate(data, 'quasi-newton', 10000);
+
+full_solver = nhgpmixturesolver(prior);
+algorithm = 'GEM';
+J = 100;
+
+[nhgpmixture_MAP, score] = full_solver.compute_EM_estimate(data, algorithm, J, initial_nhgpmixture);

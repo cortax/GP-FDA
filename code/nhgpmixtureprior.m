@@ -10,7 +10,7 @@ classdef nhgpmixtureprior < matlab.mixin.Copyable
             assert(alpha >= 1.0, 'alpha must be greater or equal to 1.0');
             prior.alpha = alpha;
             prior.G0 = G0;
-            prior.K = 9; % Trucation approximation, can be increased
+            prior.K = 100; % Trucation approximation, can be increased
         end
         
         function logP = logpdf(obj, nhgpmixture)

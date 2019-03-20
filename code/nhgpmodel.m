@@ -18,6 +18,8 @@ classdef nhgpmodel < matlab.mixin.Copyable
 		% kernel matrices and choleskies
         Ky, invKy
         Kf, invKf
+        
+        id
     end
     
     properties (Dependent)
@@ -40,6 +42,7 @@ classdef nhgpmodel < matlab.mixin.Copyable
             gp.logeta_ = tocolumn(logeta);
             gp.cov_updates = 1;
             gp.update_covariance();
+            gp.id = randi(100000000);
         end
         
         function update_covariance(gp)
