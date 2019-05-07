@@ -1,19 +1,23 @@
 classdef nhgpsolver < matlab.mixin.Copyable
 	properties
         prior nhgpprior
+        verbose_level
+        default_optimality_tol
     end
     
    	methods
 		function solver = nhgpsolver(prior)
             solver.prior = prior;
+            solver.verbose_level = 'off';
+            solver.default_optimality_tol = 0.5;
         end
         
         function [nhgp_MAP, score] = compute_MAP_estimate(obj, data, algorithm, J, initial_nhgp, data_importance, optimality_tol)
             if nargin < 7
-                optimality_tol = 0.5;
+                optimality_tol = obj.default_optimality_tol;
             end
             if nargin < 6
-                data_importance = ones(1,size(data,1));
+                data_importance = ones(1,size(data,2));
             end
             if nargin > 4
                 estimate_model = initial_nhgp;
@@ -51,7 +55,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
             f = @(theta) theta_grad(theta, estimate_model, data, data_importance);
             
             options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS','UseParallel',true, ...
-                                   'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, 'OptimalityTolerance', optimality_tol);
+                                   'SpecifyObjectiveGradient', true,'Display', obj.verbose_level,'MaxIterations',J, 'OptimalityTolerance', optimality_tol);
             theta0 = estimate_model.theta;
             
             % test simple mean adjustment optimization step 

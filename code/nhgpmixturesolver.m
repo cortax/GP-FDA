@@ -33,6 +33,39 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
             end
         end
         
+        function initial_nhgpmixture = initialization(obj, method, data, n)
+            switch method
+               case 'prior'
+                  initial_nhgpmixture = obj.prior.random_nhgpmixture();
+               case 'subsetfit'
+                   initial_nhgpmixture = obj.initialization_subsetfit(data, n);
+               otherwise
+                  error('invalid initialization method');
+            end
+        end
+        
+        function initial_nhgpmixture = initialization_subsetfit(obj, data, n)
+            solver = nhgpsolver(obj.prior.G0);
+            solver.default_optimality_tol = 0.1;
+            algorithm = 'quasi-newton';
+            proportion = ones(1, obj.prior.K)./obj.prior.K;
+            gp_component_array = {};
+            parfor k = 1:obj.prior.K
+                idx = randperm(size(data,2), n);
+                gp_component_array{k} = solver.compute_MAP_estimate(data(:,idx), algorithm, 10);
+                gp_component_array{k} = solver.compute_MAP_estimate(data(:,idx), algorithm, 10, gp_component_array{k});
+                gp_component_array{k} = solver.compute_MAP_estimate(data(:,idx), algorithm, 10, gp_component_array{k});
+                gp_component_array{k} = solver.compute_MAP_estimate(data(:,idx), algorithm, 10, gp_component_array{k});
+                gp_component_array{k} = solver.compute_MAP_estimate(data(:,idx), algorithm, 500, gp_component_array{k});
+                gp_component_array{k} = solver.compute_MAP_estimate(data(:,idx), algorithm, 500, gp_component_array{k});
+            end
+            gp_component = gp_component_array{1};
+            for k = 1:obj.prior.K
+                gp_component(k) = copy(gp_component_array{k});
+            end
+            initial_nhgpmixture = nhgpmixture(proportion, gp_component);
+        end
+        
         function [nhgpmixture_MAP, score] = compute_EM_estimate_GEM(obj, data, J, estimate_mixture)
             history = NaN(1,J);
             history(1) = estimate_mixture.logpdf(data) + obj.prior.logpdf(estimate_mixture);
@@ -119,7 +152,7 @@ classdef nhgpmixturesolver < matlab.mixin.Copyable
                 end  
                 history(j) = estimate_mixture.logpdf(data) + obj.prior.logpdf(estimate_mixture);
                 figure(99);
-                plot(history);
+                semilogy(history);
 
                 E_MP = estimate_mixture.membership_logproba(data);
                 PZ = exp(E_MP) ./ repmat(sum(exp(E_MP)),size(E_MP,1),1);

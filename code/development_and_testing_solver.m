@@ -13,15 +13,23 @@ groundtruth_model = prior.random_nhgp();
 data = groundtruth_model.random(30);
 
 solver = nhgpsolver(prior);
+solver.verbose_level = 'iter-detailed';
+solver.default_optimality_tol = 0.5;
+max_iter = 200;
 
 tic;
-[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'quasi-newton');
+[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'quasi-newton', max_iter);
 toc
-
 
 tic;
-[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'white-nesterov')
+solver.default_optimality_tol = 0.0000000000000000005;
+max_iter = 2000;
+[nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'quasi-newton', max_iter, nhgp_MAP);
 toc
+
+% tic;
+% [nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'white-nesterov')
+% toc
 
 nhgp_MAP.show();
 hold on;

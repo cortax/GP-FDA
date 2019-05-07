@@ -8,15 +8,20 @@ G0 = nhgpprior(x_timegrid, ...
                   hyper.mu_loglambda, hyper.G_loglambda, hyper.L_loglambda, ...
                   hyper.mu_logeta, hyper.G_logeta, hyper.L_logeta, ...
                   hyper.tol);
-              
+N = 500;             
 alpha = 1.5;
 
 prior = nhgpmixtureprior(alpha, G0);
-groundtruth_mixture = prior.random_nhgpmixture();
-[data, Z] = groundtruth_mixture.random(500);
 
-figure(302);
-clf;
+%groundtruth_mixture = prior.random_nhgpmixture();
+%[data, Z] = groundtruth_mixture.random(N);
+
+load('gt_mixture.mat');
+load('data.mat');
+load('Z.mat');
+
+figure(1050);
+title('Groundtruth GP components and generated data');
 nb_plot = ceil(sqrt(nnz(sum(Z'))));
 i_plot = 1;
 for k = 1:size(Z,1)
@@ -30,20 +35,34 @@ for k = 1:size(Z,1)
         i_plot = i_plot + 1;
     end
 end
+
 global gt_labels;
 [gt_labels, ~] = find(Z);
-sum(Z')
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-initial_nhgpmixture = prior.random_nhgpmixture();
-%init_solver = nhgpsolver(G0);
-%initial_nhgpmixture.gp_component(1) = init_solver.compute_MAP_estimate(data, 'quasi-newton', 10000);
 
 full_solver = nhgpmixturesolver(prior);
+initial_nhgpmixture = full_solver.initialization('subsetfit', data, 5);
+
 algorithm = 'GEM';
 J = 100;
 
 [nhgpmixture_MAP, score] = full_solver.compute_EM_estimate(data, algorithm, J, initial_nhgpmixture);
+
+
+
+
+
+
+
+
+
+
+
+
+
+

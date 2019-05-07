@@ -16,6 +16,8 @@ groundtruth_model = prior.random_nhgp();
 data = [];
 w_results = [];
 
+nhgp_MAP = prior.random_nhgp(); 
+
 for i = 1:50
     N = i;
     data = [data groundtruth_model.random(10)];
