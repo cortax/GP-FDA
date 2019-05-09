@@ -12,6 +12,7 @@ classdef nhgpsolver < matlab.mixin.Copyable
             solver.default_optimality_tol = 0.5;
         end
         
+        % J : max_iter 
         function [nhgp_MAP, score] = compute_MAP_estimate(obj, data, algorithm, J, initial_nhgp, data_importance, optimality_tol)
             if nargin < 7
                 optimality_tol = obj.default_optimality_tol;
@@ -39,11 +40,72 @@ classdef nhgpsolver < matlab.mixin.Copyable
                   %[nhgp_MAP, score] = compute_MAP_estimate_white_nesterov_parallel(obj, data, J, estimate_model, data_importance); 
                case 'quasi-newton'
                   [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(obj, data, J, estimate_model, data_importance, optimality_tol);
+               case 'sfo'
+                  [nhgp_MAP, score] = compute_MAP_estimate_sfo(obj, data, J, estimate_model, optimality_tol);
                otherwise
                   error('invalid optimization algorithm');
             end
         end
         
+        %% Adding SFO - Camille
+        
+        function [nhgp_MAP, score] = compute_MAP_estimate_sfo(obj, data, J, estimate_model, optimality_tol)
+            function [fval,grad] = theta_grad(theta, gp, data)
+                fval = -sum(gp.logpdf(data, theta)) - obj.prior.logpdf(gp.theta); 
+                if nargout>1
+                    [~, data_gradF] = gp.gradient_dtheta(data);
+                    grad = -sum(data_gradF,2) - obj.prior.gradient(gp.theta);
+                end
+            end
+            f = @(theta,data) theta_grad(theta, estimate_model, data);
+            theta0 = estimate_model.theta;
+            
+            [~,D] = size(data); % full data batch size
+            N = D;%max(1,floor(sqrt(D)/10.)); % number minibatches
+            % create the cell array of subfunction specific arguments
+            sub_refs = cell(N,1);
+            for i = 1:N
+                % extract a single minibatch of training data.
+                sub_refs{i} = data(:,i:N:end);
+            end
+            
+            dbstop if error
+            optimizer = sfo(f, theta0, sub_refs);
+            
+            % test simple mean adjustment optimization step 
+            fval0 = f(theta0,data);
+            estimate_model.m = mean(data,2);
+            thetam = estimate_model.theta;
+            fvalm = f(thetam,data);
+            if fvalm < fval0
+                theta0 = thetam;
+                estimate_model.theta = theta0;
+                fval0 = fvalm;
+            end
+            
+            % run the optimizer for a pass through the data
+            theta = optimizer.optimize(1);
+            % run the optimizer for a pass through the data until
+            % convergene arise
+            score_old = fval0;
+            score = fval0+1;
+            iter = 1;
+            while (abs(score_old-score) > obj.default_optimality_tol) && (iter < J)
+                theta = optimizer.optimize(1);
+                score_old = score;
+                score = f(theta,data);
+                iter=iter+1;
+            end
+            % compute score
+
+            
+            score = -score;
+            estimate_model.theta = theta;
+            nhgp_MAP = estimate_model;
+
+        end
+        
+        %% Previous MAP estimates
         function [nhgp_MAP, score] = compute_MAP_estimate_quasi_newton(obj, data, J, estimate_model, data_importance, optimality_tol)
             function [fval,grad] = theta_grad(theta, gp, data, importance)
                 fval = -dot(gp.logpdf(data, theta), importance) - obj.prior.logpdf(gp.theta); 

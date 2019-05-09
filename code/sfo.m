@@ -49,7 +49,7 @@
 classdef sfo < handle
 
     properties
-        display = 2;
+        display = 1;
         f_df;
         args;
         max_history = 10;
@@ -78,6 +78,12 @@ classdef sfo < handle
         % prevent numerical errors when computing the difference in gradients
         % before and after a step.
         minimum_step_length = 1e-8;
+        %------------------------------------------------------------------
+        % ADDED to check convergence
+        % The last step that occured
+        dtheta_proj_length = 1;
+        %------------------------------------------------------------------
+        
         % The length of the longest allowed update step, 
         % relative to the average length of prior update steps. Takes effect 
         % after the first full pass through the data.

@@ -28,9 +28,9 @@ for i = 1:50
 
     tic;
 
-    solver.default_optimality_tol = 0.000005;
-    max_iter = 2000;
-    [nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'quasi-newton', max_iter, nhgp_MAP);
+    %solver.default_optimality_tol = 0.000005;
+    max_iter = 500;
+    [nhgp_MAP, score] = solver.compute_MAP_estimate(data, 'sfo', max_iter, nhgp_MAP);
 
     toc
 
