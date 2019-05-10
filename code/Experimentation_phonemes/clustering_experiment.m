@@ -27,10 +27,10 @@ alpha = 1.5;
 prior = nhgpmixtureprior(alpha, G0);
 
 full_solver = nhgpmixturesolver(prior);
-initial_nhgpmixture = full_solver.initialization('prior', data, 5);
+initial_nhgpmixture = full_solver.initialization('subsetfit', data, 5);
 
-algorithm = 'GEM';
-J = 100;
+algorithm = 'Kimura';
+J = 1000;
 
 [nhgpmixture_MAP, score] = full_solver.compute_EM_estimate(data, algorithm, J, initial_nhgpmixture);
 
