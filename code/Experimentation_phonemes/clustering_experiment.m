@@ -21,19 +21,23 @@ G0 = nhgpprior(x_timegrid, ...
                   hyper.mu_loglambda, hyper.G_loglambda, hyper.L_loglambda, ...
                   hyper.mu_logeta, hyper.G_logeta, hyper.L_logeta, ...
                   hyper.tol);
-            
+
+tic;      
 alpha = 1.5;
 
 prior = nhgpmixtureprior(alpha, G0);
+prior.K = 5;
 
 full_solver = nhgpmixturesolver(prior);
-initial_nhgpmixture = full_solver.initialization('subsetfit', data, 5);
+initial_nhgpmixture = full_solver.initialization('kmeans', data, 5);
+%initial_nhgpmixture = full_solver.initialization('subsetfit', data, 3);
+%initial_nhgpmixture = full_solver.initialization('prior');
 
-algorithm = 'Kimura';
-J = 1000;
+algorithm = 'Kmeans';
+J = 100;
 
 [nhgpmixture_MAP, score] = full_solver.compute_EM_estimate(data, algorithm, J, initial_nhgpmixture);
-
+toc
 
 
 
