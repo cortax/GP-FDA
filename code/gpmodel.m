@@ -30,6 +30,9 @@ classdef gpmodel < matlab.mixin.Copyable
             obj.T = size(obj.x_timegrid,1);
 
 			obj.m_ = tocolumn(m);
+            if ~iscell(kernels)
+                kernels = {kernels};
+            end
             obj.kernels = kernels;
             
             obj.theta_delimiter_ = {};

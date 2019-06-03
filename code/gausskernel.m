@@ -1,6 +1,6 @@
 classdef gausskernel < matlab.mixin.Copyable
 
-    properties
+    properties (Access = private)
         x_timegrid
         loggamma_
         loglambda_
@@ -129,7 +129,7 @@ classdef gausskernel < matlab.mixin.Copyable
         end
     end
     
-    methods (Static)
+    methods (Static = true, Access = private)
         function K = kernel(x_timegridA, x_timegridB, gamma, lambda)
             K = gamma^2 * exp(- (pdist2(x_timegridA,x_timegridB).^2 / (lambda^2) ));
         end

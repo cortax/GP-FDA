@@ -1,15 +1,17 @@
 classdef fgausskernel < matlab.mixin.Copyable
 
-    properties
+    properties 
         x_timegrid
+        K
+        Kinv
+    end
+    
+    properties (Access = private)
         loggamma_
         loglambda_
         
         T
         D
-        
-        K
-        Kinv
         
         gpprior
         
@@ -132,7 +134,7 @@ classdef fgausskernel < matlab.mixin.Copyable
         end
     end
     
-    methods (Static)
+    methods (Static = true, Access = private)
         function K = kernel(x_timegridA, x_timegridB, gammaA, gammaB, lambdaA, lambdaB)
             sumcross = @(v1,v2) repmat(v1,1,size(v2,1)) + repmat(v2',size(v1,1),1);
             K = gammaA*gammaB' .* sqrt((2*lambdaA*lambdaB')./sumcross(lambdaA.^2,lambdaB.^2)) .* exp(- (pdist2(x_timegridA,x_timegridB).^2 ./ sumcross(lambdaA.^2,lambdaB.^2)));
