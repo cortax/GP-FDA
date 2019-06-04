@@ -1,19 +1,23 @@
 classdef gpmodel < matlab.mixin.Copyable
-	properties
-		% Gaussian process maginal on x_timegrid index
+	properties (GetAccess = public, SetAccess = private)
 		x_timegrid
+    end
+    
+    properties (Access = private, Hidden = true)
+        id
+    end
+    
+    properties (Access = private)
         T
         
-        % function parameters
         m_
         theta_delimiter_
         
         K_
         Kinv_
         
+        gpprior
         kernels
-        
-        id
     end
     
     properties (Dependent)
@@ -49,12 +53,16 @@ classdef gpmodel < matlab.mixin.Copyable
             obj.id = randi(100000000);
         end
         
-        function obj = update_covariance(obj)
-            obj.K_ = zeros(obj.T, obj.T);
-            for j = 1:length(obj.kernels)
-                obj.kernels{j}.update_covariance();
-                obj.K_ = obj.K_ + obj.kernels{j}.K;
-            end
+        function linkprior(obj, gpprior_f_m)
+            obj.gpprior.m = gpprior_f_m;
+        end
+        
+        function unlinkprior(obj)
+            obj.gpprior.m = [];
+        end
+        
+        function Y = random(obj, N)
+            Y = mvnrnd(obj.m', obj.K, N)';
         end
         
         function log_pF = logpdf(obj, Y, theta)
@@ -94,6 +102,12 @@ classdef gpmodel < matlab.mixin.Copyable
         end
         
         function score = fit(obj, data, J, optimality_tol)
+            if nargin < 3
+                J = 1000;
+            end
+            if nargin < 4
+                optimality_tol = 1e-20;
+            end
             
             function [fval,grad] = theta_grad(theta, gp, data)
                 gp.theta = theta;
@@ -105,7 +119,8 @@ classdef gpmodel < matlab.mixin.Copyable
             f = @(theta) theta_grad(theta, obj, data);
             
             options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS', 'UseParallel', true, ...
-                                   'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, 'OptimalityTolerance', optimality_tol);
+                                   'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, ...
+                                   'OptimalityTolerance', optimality_tol, 'StepTolerance', 1e-16);
             theta0 = obj.theta;
             
             % test simple mean adjustment optimization step 
@@ -124,20 +139,7 @@ classdef gpmodel < matlab.mixin.Copyable
             obj.theta = thetax;
         end
         
-        function check_gradient(obj, Y)
-            gradient = obj.gradient_dtheta(Y);
-            num_gradient = gradient*0;
-            theta0 = obj.theta;
-            for i = 1:length(num_gradient)
-                d = theta0*0;
-                d(i) = 10e-4;
-                num_gradient(i) = (sum(obj.logpdf(Y, theta0+d)) - sum(obj.logpdf(Y, theta0-d))) / (2*d(i));
-            end
-            figure;
-            plot(gradient);
-            hold on;
-            plot(num_gradient);
-        end
+        
         
         function show(obj, nbStd)
             if nargin < 2
@@ -203,7 +205,32 @@ classdef gpmodel < matlab.mixin.Copyable
             Kinv = obj.Kinv_;
         end
 		
-	end
+    end
+    
+    methods (Hidden = true)
+        function obj = update_covariance(obj)
+            obj.K_ = zeros(obj.T, obj.T);
+            for j = 1:length(obj.kernels)
+                obj.kernels{j}.update_covariance();
+                obj.K_ = obj.K_ + obj.kernels{j}.K;
+            end
+        end
+        
+        function check_gradient(obj, Y)
+            gradient = obj.gradient_dtheta(Y);
+            num_gradient = gradient*0;
+            theta0 = obj.theta;
+            for i = 1:length(num_gradient)
+                d = theta0*0;
+                d(i) = 10e-4;
+                num_gradient(i) = (sum(obj.logpdf(Y, theta0+d)) - sum(obj.logpdf(Y, theta0-d))) / (2*d(i));
+            end
+            figure;
+            plot(gradient);
+            hold on;
+            plot(num_gradient);
+        end
+    end
 end
 
 

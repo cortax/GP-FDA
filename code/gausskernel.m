@@ -8,19 +8,25 @@ classdef gausskernel < matlab.mixin.Copyable
         T
         D
         
-        K
-        Kinv
-        
-        gpprior
+        %prior
         
         id
     end
     
-    properties (Dependent)
+    properties (GetAccess = public, SetAccess = private)
+        K
+        Kinv 
+    end
+    
+    properties (Dependent = true, Hidden = true)
+        nb_param
+    end
+    
+    properties (Dependent = true, Hidden = false)
         theta
         loggamma
         loglambda
-        nb_param
+        
     end
     
     methods
@@ -32,26 +38,21 @@ classdef gausskernel < matlab.mixin.Copyable
             obj.T = size(obj.x_timegrid,1);
 			obj.D = pdist2(obj.x_timegrid,obj.x_timegrid).^2;
             
-            obj.unlinkprior();
+            %obj.unlinkprior();
             
             obj.update_covariance();
             obj.id = randi(100000000);
         end
         
-        function update_covariance(obj)
-            obj.K = obj.kernel(obj.x_timegrid, obj.x_timegrid, exp(obj.loggamma), exp(obj.loglambda));
-            obj.Kinv = pdinv(obj.K);
-        end
-        
-        function linkprior(obj, gpprior_loggamma, prior_loglambda)
-            obj.gpprior.loggamma = gpprior_loggamma;
-            obj.gpprior.loglambda = prior_loglambda;
-        end
-        
-        function unlinkprior(obj)
-            obj.gpprior.loggamma = [];
-            obj.gpprior.loglambda = [];
-        end
+%         function linkprior(obj, gpprior_loggamma, prior_loglambda)
+%             obj.prior.loggamma = gpprior_loggamma;
+%             obj.prior.loglambda = prior_loglambda;
+%         end
+%         
+%         function unlinkprior(obj)
+%             obj.gpprior.loggamma = [];
+%             obj.gpprior.loglambda = [];
+%         end
         
         function [gradient, gradientY] = gradient_dtheta(obj, Y, parent_gp)
             [gradient_dloggamma, gradient_dloggammaY] = obj.gradient_dloggamma(Y, parent_gp);
@@ -80,7 +81,7 @@ classdef gausskernel < matlab.mixin.Copyable
             gradient = sum(gradientY,2);
         end
         
-		function set.loggamma(obj, loggamma)
+        function set.loggamma(obj, loggamma)
             obj.K = [];
             obj.Kinv = [];
 			obj.loggamma_ = loggamma;
@@ -126,6 +127,13 @@ classdef gausskernel < matlab.mixin.Copyable
         
         function n = get.nb_param(obj)
             n = length(obj.loggamma_) + length(obj.loglambda_);
+        end
+    end
+    
+    methods (Hidden = true)
+        function update_covariance(obj)
+            obj.K = obj.kernel(obj.x_timegrid, obj.x_timegrid, exp(obj.loggamma), exp(obj.loglambda));
+            obj.Kinv = pdinv(obj.K);
         end
     end
     

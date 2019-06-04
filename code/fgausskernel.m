@@ -45,9 +45,9 @@ classdef fgausskernel < matlab.mixin.Copyable
             obj.Kinv = pdinv(obj.K);
         end
         
-        function linkprior(obj, gpprior_loggamma, gpprior_loglambda)
-            obj.gpprior.loggamma = gpprior_loggamma;
-            obj.gpprior.loglambda = gpprior_loglambda;
+        function linkprior(obj, gpprior_f_loggamma, gpprior_f_loglambda)
+            obj.gpprior.loggamma = gpprior_f_loggamma;
+            obj.gpprior.loglambda = gpprior_f_loglambda;
         end
         
         function unlinkprior(obj)
