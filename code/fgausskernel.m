@@ -45,6 +45,19 @@ classdef fgausskernel < matlab.mixin.Copyable
             obj.Kinv = pdinv(obj.K);
         end
         
+        function logP = logprior(obj, theta)
+            logP = 0;
+            if nargin == 2
+                obj.theta = theta;
+            end
+            if ~isempty(obj.gpprior.loggamma)
+                logP = logP + obj.gpprior.loggamma.logpdf(obj.loggamma);
+            end
+            if ~isempty(obj.gpprior.loglambda)
+                logP = logP + obj.gpprior.loglambda.logpdf(obj.loglambda);
+            end
+        end
+        
         function linkprior(obj, gpprior_f_loggamma, gpprior_f_loglambda)
             obj.gpprior.loggamma = gpprior_f_loggamma;
             obj.gpprior.loglambda = gpprior_f_loglambda;
@@ -55,14 +68,19 @@ classdef fgausskernel < matlab.mixin.Copyable
             obj.gpprior.loglambda = [];
         end
         
-        function [gradient, gradientY] = gradient_dtheta(obj, Y, parent_gp)
-            [gradient_dloggamma, gradient_dloggammaY] = obj.gradient_dloggamma(Y, parent_gp);
-            [gradient_dloglambda, gradient_dloglambdaY] = obj.gradient_dloglambda(Y, parent_gp);
+        function gradient = gradient_dtheta(obj, Y, parent_gp)
+            gradient_dloggamma = obj.gradient_dloggamma(Y, parent_gp);
+            gradient_dloglambda = obj.gradient_dloglambda(Y, parent_gp);
+            if ~isempty(obj.gpprior.loggamma)
+                gradient_dloggamma = gradient_dloggamma + obj.gpprior.loggamma.gradient_dY(obj.loggamma);
+            end
+            if ~isempty(obj.gpprior.loglambda)
+                gradient_dloglambda = gradient_dloglambda + obj.gpprior.loglambda.gradient_dY(obj.loglambda);
+            end
             gradient = [gradient_dloggamma; gradient_dloglambda];
-            gradientY = [gradient_dloggammaY; gradient_dloglambdaY];
         end
         
-        function [gradient, gradientY] = gradient_dloggamma(obj, Y, parent_gp)
+        function gradient = gradient_dloggamma(obj, Y, parent_gp)
             gradientY = zeros(size(Y));
             for i_data = 1:size(Y,2)
                 a = parent_gp.Kinv*(Y(:,i_data) - parent_gp.m);
@@ -71,7 +89,7 @@ classdef fgausskernel < matlab.mixin.Copyable
             gradient = sum(gradientY,2);
         end
         
-        function [gradient, gradientY] = gradient_dloglambda(obj, Y, parent_gp)
+        function gradient = gradient_dloglambda(obj, Y, parent_gp)
             lambda = exp(obj.loglambda);
             gamma = exp(obj.loggamma);
 
@@ -81,7 +99,7 @@ classdef fgausskernel < matlab.mixin.Copyable
             dK = (lambda*lambda') .* (gamma*gamma') .* E .* (R.^(-1)) .* (L.^(-3)) .* (4 * obj.D .* repmat(lambda.^2,1,obj.T) - repmat(lambda.^4,1,obj.T) + repmat(lambda'.^4,obj.T,1));
 
             A = parent_gp.Kinv*(Y - repmat(parent_gp.m, 1, size(Y,2)));
-            gradientY = A.*(A'*dK')' - repmat(sum(parent_gp.Kinv.*dK,2),1,size(Y,2));
+            %gradientY = A.*(A'*dK')' - repmat(sum(parent_gp.Kinv.*dK,2),1,size(Y,2));
             gradient = sum(A.*(A'*dK')',2) + -size(Y,2)*sum(parent_gp.Kinv.*dK,2);
         end
         
@@ -93,6 +111,7 @@ classdef fgausskernel < matlab.mixin.Copyable
         
         function set.theta(obj, theta)
             n = length(theta);
+            assert(n == 2*obj.T, 'invalid theta length')
             obj.loggamma = theta(1:(n/2));
             obj.loglambda = theta((1+n/2):n);
         end
