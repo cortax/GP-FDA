@@ -1,11 +1,11 @@
-x_timegrid = linspace(0,1,200);
+x_timegrid = linspace(-1,1,200);
 T = length(x_timegrid);
 load('data');
 
                
-%k_fgauss = make_fgausskernel(x_timegrid);
+k_fgauss = make_fgausskernel(x_timegrid);
 k_fnoise = make_fnoisekernel(x_timegrid);
-kernels = {k_fnoise};
+kernels = {k_fgauss, k_fnoise};
 
 m = zeros(1,T); 
 gpprior_f_m = make_gpprior_m(x_timegrid);
@@ -15,8 +15,6 @@ gp.linkprior(gpprior_f_m);
 
 
 gp.fit(data)
-
-
 
 return;
 
@@ -47,4 +45,4 @@ return;
 figure;
 gp.show();
 hold on;
-plot(x_timegrid, data1);
+plot(x_timegrid, data);

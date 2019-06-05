@@ -10,7 +10,7 @@ function k_fnoise = make_fnoisekernel(x_timegrid)
     %plot(gpprior_f_logeta.x_timegrid, exp(gpprior_f_logeta.random(10)));
 
     %%%%%%% Construction of the function noise kernel
-    logeta = log(0.75.*ones(1,T));
+    logeta = log(1.0.*ones(1,T));
     k_fnoise = fnoisekernel(x_timegrid, logeta);
 
     %%%%%%% Applying function priors on noise kernel functional hyperparameters

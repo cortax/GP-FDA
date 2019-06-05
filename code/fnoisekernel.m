@@ -47,6 +47,16 @@ classdef fnoisekernel < matlab.mixin.Copyable
             obj.gpprior.logeta = [];
         end
         
+        function logP = logprior(obj, theta)
+            logP = 0;
+            if nargin == 2
+                obj.theta = theta;
+            end
+            if ~isempty(obj.gpprior.logeta)
+                logP = logP + obj.gpprior.logeta.logpdf(obj.logeta);
+            end
+        end
+        
         function gradient = gradient_dtheta(obj, Y, parent_gp)
             gradient = obj.gradient_dlogeta(Y, parent_gp);
             if ~isempty(obj.gpprior.logeta)

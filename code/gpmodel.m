@@ -142,7 +142,7 @@ classdef gpmodel < matlab.mixin.Copyable
         
         function score = fit(obj, data, J, optimality_tol)
             if nargin < 3
-                J = 1000;
+                J = 10000;
             end
             if nargin < 4
                 optimality_tol = 1e-20;
@@ -150,7 +150,7 @@ classdef gpmodel < matlab.mixin.Copyable
             
             function [fval,grad] = theta_grad(theta, gp, data)
                 gp.theta = theta;
-                fval = -sum(gp.logpdf(data)); 
+                fval = -sum(gp.logposterior(data)); 
                 if nargout>1
                     grad = -gp.gradient_dtheta(data);
                 end

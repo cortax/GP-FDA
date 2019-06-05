@@ -18,8 +18,8 @@ function k_fgauss = make_fgausskernel(x_timegrid)
     %plot(gpprior_f_loglambda.x_timegrid, exp(gpprior_f_loglambda.random(10)));
 
     %%%%%%% Construction of the function Gaussian kernel
-    loggamma = log(0.5.*ones(1,T));
-    loglambda = log(0.1.*ones(1,T));
+    loggamma = log(1.0.*ones(1,T));
+    loglambda = log(0.01.*ones(1,T));
     k_fgauss = fgausskernel(x_timegrid, loggamma, loglambda);
 
     %%%%%%% Applying function priors on Gaussian kernel functional hyperparameters
