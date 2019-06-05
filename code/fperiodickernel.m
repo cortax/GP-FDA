@@ -1,17 +1,15 @@
 classdef fperiodickernel < matlab.mixin.Copyable
-    %FPERIODICKERNEL Summary of this class goes here
-    %   Detailed explanation goes here
-    
+
     properties
         x_timegrid
-        logbeta_
-        logomega_
-        
         K
         Kinv
-        
+    end
+    
+    properties (Access = private)
+        logbeta_
+        logomega_
         gpprior
-        
         id
     end
     
@@ -39,6 +37,19 @@ classdef fperiodickernel < matlab.mixin.Copyable
             obj.Kinv = pdinv(obj.K);
         end
         
+        function logP = logprior(obj, theta)
+            logP = 0;
+            if nargin == 2
+                obj.theta = theta;
+            end
+            if ~isempty(obj.gpprior.logbeta)
+                logP = logP + obj.gpprior.logbeta.logpdf(obj.logbeta);
+            end
+            if ~isempty(obj.gpprior.logomega)
+                logP = logP + obj.gpprior.logomega.logpdf(obj.logomega);
+            end
+        end
+        
         function linkprior(obj, gpprior_logbeta, prior_logomega)
             obj.gpprior.logbeta = gpprior_logbeta;
             obj.gpprior.logomega = prior_logomega;
@@ -49,11 +60,16 @@ classdef fperiodickernel < matlab.mixin.Copyable
             obj.gpprior.logomega = [];
         end
         
-        function [gradient, gradientY] = gradient_dtheta(obj, Y, parent_gp)
-            [gradient_dlogbeta, gradient_dlogbetaY] = obj.gradient_dlogbeta(Y, parent_gp);
-            [gradient_dlogomega, gradient_dlogomegaY] = obj.gradient_dlogomega(Y, parent_gp);
+        function gradient = gradient_dtheta(obj, Y, parent_gp)
+            gradient_dlogbeta = obj.gradient_dlogbeta(Y, parent_gp);
+            gradient_dlogomega = obj.gradient_dlogomega(Y, parent_gp);
+            if ~isempty(obj.gpprior.logbeta)
+                gradient_dlogbeta = gradient_dlogbeta + obj.gpprior.logbeta.gradient_dY(obj.logbeta);
+            end
+            if ~isempty(obj.gpprior.logomega)
+                gradient_dlogomega = gradient_dlogomega + obj.gpprior.logomega.gradient_dY(obj.logomega);
+            end
             gradient = [gradient_dlogbeta; gradient_dlogomega];
-            gradientY = [gradient_dlogbetaY; gradient_dlogomegaY];
         end
         
         function [gradient, gradientY] = gradient_dlogbeta(obj, Y, parent_gp)
