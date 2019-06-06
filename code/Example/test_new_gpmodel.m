@@ -16,7 +16,7 @@ gp.linkprior(gpprior_f_m);
 
 gp.fit(data)
 
-gp.check_gradient(data);
+%gp.check_gradient(data);
 
 figure;
 gp.show();
