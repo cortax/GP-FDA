@@ -17,14 +17,14 @@ data_pho = cell(5);
 class_gp = cell(5);
 
 %for each dataset
-for phoneme_label = 1:5         
+parfor phoneme_label = 1:5         
     idx1 = find(phoZ(:,phoneme_label));    
     data_pho{phoneme_label} = phoY(:,idx1);
 
-    k_fperiodic = make_fperiodickernel(x_timegrid);            
+    %k_fperiodic = make_fperiodickernel(x_timegrid);            
     k_fgauss = make_fgausskernel(x_timegrid);
     k_fnoise = make_fnoisekernel(x_timegrid);
-    kernels = {k_fperiodic, k_fgauss, k_fnoise};
+    kernels = {k_fgauss, k_fnoise};
 
     m = zeros(1,T); 
     gpprior_f_m = make_gpprior_m(x_timegrid);
@@ -36,10 +36,11 @@ for phoneme_label = 1:5
     gp.fit(data_pho{phoneme_label})
     % memorize
     class_gp{phoneme_label} = gp;
-end;
+end
+
+save('class_gp_fgaussian_fnoise', class_gp);
 
 
-hold on;
 for phoneme_label = 1:5
     figure;
     class_gp{phoneme_label}.show();
