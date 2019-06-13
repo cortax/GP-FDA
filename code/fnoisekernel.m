@@ -2,10 +2,15 @@ classdef fnoisekernel < matlab.mixin.Copyable
 
     properties
         x_timegrid
-        logeta_
-        
         K
         Kinv
+    end
+    
+    properties (Access = private)
+        logeta_
+        
+        T
+        D
         
         gpprior
         
@@ -34,21 +39,32 @@ classdef fnoisekernel < matlab.mixin.Copyable
             obj.Kinv = pdinv(obj.K);
         end
         
-        function linkprior(obj, gpprior_logeta, prior_loglambda)
+        function linkprior(obj, gpprior_logeta)
             obj.gpprior.logeta = gpprior_logeta;
-            obj.gpprior.loglambda = prior_loglambda;
         end
         
         function unlinkprior(obj)
             obj.gpprior.logeta = [];
-            obj.gpprior.loglambda = [];
         end
         
-        function [gradient, gradientY] = gradient_dtheta(obj, Y, parent_gp)
-            [gradient, gradientY] = obj.gradient_dlogeta(Y, parent_gp);
+        function logP = logprior(obj, theta)
+            logP = 0;
+            if nargin == 2
+                obj.theta = theta;
+            end
+            if ~isempty(obj.gpprior.logeta)
+                logP = logP + obj.gpprior.logeta.logpdf(obj.logeta);
+            end
         end
         
-        function [gradient, gradientY] = gradient_dlogeta(obj, Y, parent_gp)
+        function gradient = gradient_dtheta(obj, Y, parent_gp)
+            gradient = obj.gradient_dlogeta(Y, parent_gp);
+            if ~isempty(obj.gpprior.logeta)
+                gradient = gradient + obj.gpprior.logeta.gradient_dY(obj.logeta);
+            end
+        end
+        
+        function gradient = gradient_dlogeta(obj, Y, parent_gp)
             gradientY = zeros(length(obj.logeta_), size(Y,2));
             for i_data = 1:size(Y,2)
                 alpha_i = parent_gp.Kinv*(Y(:,i_data)-parent_gp.m);

@@ -1,19 +1,23 @@
 classdef gpmodel < matlab.mixin.Copyable
-	properties
-		% Gaussian process maginal on x_timegrid index
+	properties (GetAccess = public, SetAccess = private)
 		x_timegrid
+    end
+    
+    properties (Access = private, Hidden = true)
+        id
+    end
+    
+    properties (Access = private)
         T
         
-        % function parameters
         m_
         theta_delimiter_
         
         K_
         Kinv_
         
+        gpprior
         kernels
-        
-        id
     end
     
     properties (Dependent)
@@ -30,6 +34,9 @@ classdef gpmodel < matlab.mixin.Copyable
             obj.T = size(obj.x_timegrid,1);
 
 			obj.m_ = tocolumn(m);
+            if ~iscell(kernels)
+                kernels = {kernels};
+            end
             obj.kernels = kernels;
             
             obj.theta_delimiter_ = {};
@@ -46,38 +53,78 @@ classdef gpmodel < matlab.mixin.Copyable
             obj.id = randi(100000000);
         end
         
-        function obj = update_covariance(obj)
-            obj.K_ = zeros(obj.T, obj.T);
-            for j = 1:length(obj.kernels)
-                obj.kernels{j}.update_covariance();
-                obj.K_ = obj.K_ + obj.kernels{j}.K;
-            end
+        function linkprior(obj, gpprior_f_m)
+            obj.gpprior.m = gpprior_f_m;
         end
         
-        function log_pF = logpdf(obj, Y, theta)
+        function unlinkprior(obj)
+            obj.gpprior.m = [];
+        end
+        
+        function Y = random(obj, N)
+            Y = mvnrnd(obj.m', obj.K, N)';
+        end
+        
+        function logP = logpdf(obj, Y, theta)
             if nargin == 3
                 obj.theta = tocolumn(theta);
             end
-            log_pF = logmvnpdf(Y', obj.m', obj.K, obj.Kinv);
+            logP = logmvnpdf(Y', obj.m', obj.K, obj.Kinv);
         end
         
-        function [gradient, gradientY] = gradient_dtheta(obj, Y)
-			gradient = zeros(obj.theta_delimiter_{end}(2),1);
-            gradientY = zeros(obj.theta_delimiter_{end}(2),size(Y,2));
-            
-            [gradient_dm, gradient_dmY] = obj.gradient_dm(Y);
-            a = obj.theta_delimiter_{1}(1);
-            b = obj.theta_delimiter_{1}(2);
-            gradient(a:b) = gradient_dm;
-            gradientY(a:b,:) = gradient_dmY;
+        function logL = loglikelihood(obj, Y, theta)
+            if nargin == 3
+                obj.theta = tocolumn(theta);
+            end
+            logL = sum(logmvnpdf(Y', obj.m', obj.K, obj.Kinv));
+        end
+        
+        function logP = logprior(obj, theta)
+            logP = 0;
+            if nargin == 2
+                obj.theta = tocolumn(theta);
+            else
+                theta = obj.theta;
+            end
+            if ~isempty(obj.gpprior)
+                a = obj.theta_delimiter_{1}(1);
+                b = obj.theta_delimiter_{1}(2);
+                logP =  logP + obj.gpprior.m.logpdf(theta(a:b));
+            end
             
             for j = 2:length(obj.theta_delimiter_)
                 a = obj.theta_delimiter_{j}(1);
                 b = obj.theta_delimiter_{j}(2);
                 
-                [gradient_k, gradient_kY] = obj.kernels{j-1}.gradient_dtheta(Y, obj);
+                k = obj.kernels{j-1};
+                logP =  logP + k.logprior(theta(a:b));
+            end
+        end
+        
+        function logP = logposterior(obj, Y, theta)
+            if nargin == 3
+                obj.theta = theta;
+                logP = obj.loglikelihood(Y);
+                logP = logP + obj.logprior();
+            else
+                logP = obj.loglikelihood(Y) + obj.logprior();
+            end
+        end
+        
+        function gradient = gradient_dtheta(obj, Y)
+			gradient = zeros(obj.theta_delimiter_{end}(2),1);
+            
+            gradient_dm = obj.gradient_dm(Y);
+            a = obj.theta_delimiter_{1}(1);
+            b = obj.theta_delimiter_{1}(2);
+            gradient(a:b) = gradient_dm;
+            
+            for j = 2:length(obj.theta_delimiter_)
+                a = obj.theta_delimiter_{j}(1);
+                b = obj.theta_delimiter_{j}(2);
+                
+                gradient_k = obj.kernels{j-1}.gradient_dtheta(Y, obj);
                 gradient(a:b) = gradient_k;
-                gradientY(a:b,:) = gradient_kY;
             end
         end
         
@@ -85,16 +132,25 @@ classdef gpmodel < matlab.mixin.Copyable
             gradient = -obj.Kinv*(Y - repmat(obj.m,1,size(Y,2)));
         end
 
-        function [gradient, gradientY] = gradient_dm(obj, Y)
+        function gradient = gradient_dm(obj, Y)
             gradientY = obj.Kinv*(Y - repmat(obj.m, 1, size(Y,2)));
             gradient = sum(gradientY,2);
+            if ~isempty(obj.gpprior)
+                gradient = gradient + obj.gpprior.m.gradient_dY(obj.m);
+            end
         end
         
         function score = fit(obj, data, J, optimality_tol)
+            if nargin < 3
+                J = 10000;
+            end
+            if nargin < 4
+                optimality_tol = 1e-20;
+            end
             
             function [fval,grad] = theta_grad(theta, gp, data)
                 gp.theta = theta;
-                fval = -sum(gp.logpdf(data)); 
+                fval = -sum(gp.logposterior(data)); 
                 if nargout>1
                     grad = -gp.gradient_dtheta(data);
                 end
@@ -102,7 +158,8 @@ classdef gpmodel < matlab.mixin.Copyable
             f = @(theta) theta_grad(theta, obj, data);
             
             options = optimoptions('fminunc','Algorithm','quasi-newton','HessUpdate','BFGS', 'UseParallel', true, ...
-                                   'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, 'OptimalityTolerance', optimality_tol);
+                                   'SpecifyObjectiveGradient', true,'Display','iter-detailed','MaxIterations',J, ...
+                                   'OptimalityTolerance', optimality_tol, 'StepTolerance', 1e-16);
             theta0 = obj.theta;
             
             % test simple mean adjustment optimization step 
@@ -121,20 +178,7 @@ classdef gpmodel < matlab.mixin.Copyable
             obj.theta = thetax;
         end
         
-        function check_gradient(obj, Y)
-            gradient = obj.gradient_dtheta(Y);
-            num_gradient = gradient*0;
-            theta0 = obj.theta;
-            for i = 1:length(num_gradient)
-                d = theta0*0;
-                d(i) = 10e-4;
-                num_gradient(i) = (sum(obj.logpdf(Y, theta0+d)) - sum(obj.logpdf(Y, theta0-d))) / (2*d(i));
-            end
-            figure;
-            plot(gradient);
-            hold on;
-            plot(num_gradient);
-        end
+        
         
         function show(obj, nbStd)
             if nargin < 2
@@ -149,6 +193,7 @@ classdef gpmodel < matlab.mixin.Copyable
             
             a = obj.theta_delimiter_{1}(1);
             b = obj.theta_delimiter_{1}(2);
+            assert(b-a+1 == obj.T, 'invalid m length')
             obj.m = theta(a:b);
             for j = 2:length(obj.theta_delimiter_)
                 a = obj.theta_delimiter_{j}(1);
@@ -200,7 +245,32 @@ classdef gpmodel < matlab.mixin.Copyable
             Kinv = obj.Kinv_;
         end
 		
-	end
+    end
+    
+    methods (Hidden = true)
+        function obj = update_covariance(obj)
+            obj.K_ = zeros(obj.T, obj.T);
+            for j = 1:length(obj.kernels)
+                obj.kernels{j}.update_covariance();
+                obj.K_ = obj.K_ + obj.kernels{j}.K;
+            end
+        end
+        
+        function check_gradient(obj, Y)
+            gradient = obj.gradient_dtheta(Y);
+            num_gradient = gradient*0;
+            theta0 = obj.theta;
+            for i = 1:length(num_gradient)
+                d = theta0*0;
+                d(i) = 10e-4;
+                num_gradient(i) = (sum(obj.logposterior(Y, theta0+d)) - sum(obj.logposterior(Y, theta0-d))) / (2*d(i));
+            end
+            figure;
+            plot(gradient);
+            hold on;
+            plot(num_gradient);
+        end
+    end
 end
 
 
