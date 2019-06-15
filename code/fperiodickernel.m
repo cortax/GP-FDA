@@ -6,7 +6,7 @@ classdef fperiodickernel < matlab.mixin.Copyable
         Kinv
     end
     
-    properties (Access = private)
+    properties (Hidden = true)
         logbeta_
         logomega_
         gpprior

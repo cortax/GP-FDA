@@ -7,7 +7,7 @@ classdef gpmodel < matlab.mixin.Copyable
         id
     end
     
-    properties (Access = private)
+    properties (Access = public, Hidden = true)
         T
         
         m_

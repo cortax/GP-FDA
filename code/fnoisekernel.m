@@ -6,7 +6,7 @@ classdef fnoisekernel < matlab.mixin.Copyable
         Kinv
     end
     
-    properties (Access = private)
+    properties (Hidden = true)
         logeta_
         
         T

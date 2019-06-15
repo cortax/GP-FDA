@@ -5,7 +5,8 @@ class_gp = cell(1,5);
 
 %for each dataset
 parfor phoneme_label = 1:5         
-    k_fperiodic = make_fperiodickernel(x_timegrid);            
+    k_fperiodic = make_fperiodickernel(x_timegrid);  
+    k_fperiodic.logomega = k_fperiodic.logomega + 4;
     k_fgauss = make_fgausskernel(x_timegrid);
     k_fnoise = make_fnoisekernel(x_timegrid);
     kernels = {k_fgauss, k_fperiodic, k_fnoise};
