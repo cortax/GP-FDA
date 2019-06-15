@@ -3,7 +3,7 @@ preprocessing;
 
 gps = cell(6,12);
 
-for k = 1:6
+    k = 3;
     parfor j = 1:12
         fprintf('%d %d\n', k,j);
         k_fperiodic = make_fperiodickernel(x_timegrid);  
@@ -30,6 +30,6 @@ for k = 1:6
         
         gps{k,j} = gp;
     end
-    save('gps_backup.mat', 'gps');
-end
+    save('gps_backup_3.mat', 'gps');
+
 
